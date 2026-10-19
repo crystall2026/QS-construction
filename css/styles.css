@@ -212,6 +212,98 @@ button {
   background: #0b375d;
 }
 
+/* ==========================================================================
+   NÚT HÀNH ĐỘNG TO, GÂY CHÚ Ý, DỄ CLICK (HERO ACTION BUTTONS)
+   ========================================================================== */
+.btn-hero {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 800;
+  border: 1.5px solid transparent;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+.btn-hero:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+}
+
+.btn-hero:active {
+  transform: translateY(0);
+}
+
+.btn-hero-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.btn-hero-text {
+  letter-spacing: -0.2px;
+}
+
+.btn-hero-primary {
+  background: #0f4c81;
+  color: #ffffff;
+  border-color: #0b375d;
+}
+.btn-hero-primary:hover {
+  background: #0b375d;
+}
+
+.btn-hero-accent {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0369a1;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+}
+.btn-hero-accent:hover {
+  background: #0369a1;
+}
+
+.btn-hero-slate {
+  background: #334155;
+  color: #ffffff;
+  border-color: #1e293b;
+}
+.btn-hero-slate:hover {
+  background: #1e293b;
+}
+
+.btn-hero-gold {
+  background: #0f766e;
+  color: #ffffff;
+  border-color: #115e59;
+  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.25);
+}
+.btn-hero-gold:hover {
+  background: #115e59;
+}
+
+.btn-hero-ai {
+  background: #eff6ff;
+  color: #0f4c81;
+  border-color: #93c5fd;
+}
+.btn-hero-ai:hover {
+  background: #dbeafe;
+  border-color: #60a5fa;
+}
+
+.btn-hero-sub {
+  padding: 11px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  border-radius: 10px;
+}
+
 .btn-action-focus {
   background: #0284c7;
   color: #ffffff;

@@ -651,3 +651,37 @@ export const PROJECT_TEMPLATES = {
     ]
   }
 };
+
+const STORAGE_KEY_CUSTOM_NORMS = 'crystal_qs_labor_norms_v1';
+
+export function getActiveLaborNorms() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_CUSTOM_NORMS);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('Lỗi đọc định mức tùy chỉnh:', err);
+  }
+  return LABOR_NORMS;
+}
+
+export function saveActiveLaborNorms(normsList) {
+  try {
+    localStorage.setItem(STORAGE_KEY_CUSTOM_NORMS, JSON.stringify(normsList));
+  } catch (err) {
+    console.error('Lỗi lưu định mức tùy chỉnh:', err);
+  }
+}
+
+export function resetLaborNormsToDefault() {
+  try {
+    localStorage.removeItem(STORAGE_KEY_CUSTOM_NORMS);
+  } catch (err) {
+    console.error('Lỗi reset định mức:', err);
+  }
+  return LABOR_NORMS;
+}

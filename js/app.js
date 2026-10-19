@@ -1,5 +1,14 @@
 // Logic trung tâm: Dashboard gọn gàng, Modal Nhập liệu & Thiết lập, Phân loại dự án (Tòa nhà, Căn hộ, Nhà phố, Shophouse), Lịch Thứ 7 - CN & Xuất PDF hoàn hảo
-import { TRADES, LABOR_NORMS, PROJECT_TEMPLATES, WEEKEND_TAGS, PROJECT_TYPES } from './norms-data.js';
+import {
+  TRADES,
+  LABOR_NORMS,
+  PROJECT_TEMPLATES,
+  WEEKEND_TAGS,
+  PROJECT_TYPES,
+  getActiveLaborNorms,
+  saveActiveLaborNorms,
+  resetLaborNormsToDefault
+} from './norms-data.js';
 import {
   getActiveApiKey,
   setCustomApiKey,
@@ -895,35 +904,111 @@ function renderBOQDetailTable(calc) {
   });
 }
 
-function renderNormsLibraryModal() {
+function renderNormsLibraryModal(filterQuery = '') {
   const tbody = document.getElementById('norms-library-tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = LABOR_NORMS.map(norm => {
+  const allNorms = getActiveLaborNorms();
+  const query = filterQuery.trim().toLowerCase();
+
+  const filtered = query
+    ? allNorms.filter(n =>
+        n.name.toLowerCase().includes(query) ||
+        n.code.toLowerCase().includes(query) ||
+        (n.note && n.note.toLowerCase().includes(query)) ||
+        (TRADES[n.trade]?.name && TRADES[n.trade].name.toLowerCase().includes(query))
+      )
+    : allNorms;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-cell" style="padding:24px; text-align:center; color:#64748b;">
+      Không tìm thấy định mức phù hợp với từ khóa "${filterQuery}". Bấm "Bổ Sung Định Mức Mới" để tạo ngay!
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(norm => {
     const tr = TRADES[norm.trade] || TRADES.FURNITURE;
     const wk = WEEKEND_TAGS[norm.weekendTag] || WEEKEND_TAGS.QUIET_WEEKDAY;
     return `
-      <tr>
-        <td><code>${norm.code}</code></td>
+      <tr data-norm-code="${norm.code}">
+        <td><code style="font-weight:700; color:#0f4c81;">${norm.code}</code></td>
         <td>
-          <strong>${norm.name}</strong>
-          <div class="sub-text">${norm.note}</div>
+          <input
+            type="text"
+            class="table-inline-input norm-edit-name"
+            data-code="${norm.code}"
+            value="${norm.name}"
+            title="Nhấp để sửa tên công việc"
+          />
+          <div class="sub-text">
+            <input
+              type="text"
+              class="table-inline-input norm-edit-note"
+              data-code="${norm.code}"
+              value="${norm.note || ''}"
+              placeholder="Ghi chú điều phối..."
+              style="font-size:11px; color:#64748b;"
+            />
+          </div>
         </td>
-        <td><span class="trade-badge" style="background:${tr.bgLight}; color:${tr.color};">${tr.icon} ${tr.shortName}</span></td>
-        <td><span style="display:inline-block; padding:3px 8px; border-radius:5px; font-size:11.5px; font-weight:700; background:${wk.bg}; color:${wk.color}; border:1px solid ${wk.border};">${wk.shortLabel}</span></td>
-        <td class="text-center">${norm.unit}</td>
-        <td class="text-right"><strong>${norm.productivityPerManDay} ${norm.unit}/công</strong></td>
+        <td>
+          <select class="table-inline-select norm-edit-trade" data-code="${norm.code}">
+            ${Object.keys(TRADES).map(k => `
+              <option value="${k}" ${norm.trade === k ? 'selected' : ''}>${TRADES[k].shortName}</option>
+            `).join('')}
+          </select>
+        </td>
+        <td>
+          <select class="table-inline-select norm-edit-weekend" data-code="${norm.code}">
+            ${Object.keys(WEEKEND_TAGS).map(k => `
+              <option value="${k}" ${norm.weekendTag === k ? 'selected' : ''}>${WEEKEND_TAGS[k].shortLabel}</option>
+            `).join('')}
+          </select>
+        </td>
         <td class="text-center">
-          <button type="button" class="btn-secondary btn-sm add-norm-to-boq" data-code="${norm.code}">+ Đưa vào BOQ</button>
+          <input
+            type="text"
+            class="table-inline-input text-center norm-edit-unit"
+            data-code="${norm.code}"
+            value="${norm.unit}"
+            style="width:50px;"
+          />
+        </td>
+        <td class="text-right">
+          <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px;">
+            <input
+              type="number"
+              step="any"
+              min="0.1"
+              class="table-inline-input text-right norm-edit-prod"
+              data-code="${norm.code}"
+              value="${norm.productivityPerManDay}"
+              style="width:65px; font-weight:800; color:#0f4c81;"
+            />
+            <span class="sub-text">${norm.unit}/công</span>
+          </div>
+        </td>
+        <td class="text-center">
+          <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+            <button type="button" class="btn-primary btn-sm add-norm-to-boq" data-code="${norm.code}" title="Thêm hạng mục này vào bảng dự toán hiện tại">
+              + Đưa vào BOQ
+            </button>
+            <button type="button" class="btn-icon-delete delete-norm-btn" data-code="${norm.code}" title="Xóa định mức này">
+              🗑️
+            </button>
+          </div>
         </td>
       </tr>
     `;
   }).join('');
 
+  // 1. Thêm vào BOQ
   tbody.querySelectorAll('.add-norm-to-boq').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const code = e.currentTarget.getAttribute('data-code');
-      const found = LABOR_NORMS.find(n => n.code === code);
+      const currentNorms = getActiveLaborNorms();
+      const found = currentNorms.find(n => n.code === code);
       if (found) {
         state.items.push({
           code: found.code,
@@ -932,11 +1017,75 @@ function renderNormsLibraryModal() {
           unit: found.unit,
           quantity: 50,
           productivityPerManDay: found.productivityPerManDay,
-          crewSize: found.defaultCrewSize,
+          crewSize: found.defaultCrewSize || 2,
           weekendTag: found.weekendTag
         });
         renderAll();
-        showToast(`Đã thêm "${found.name}" vào bảng dự toán!`);
+        showToast(`Đã thêm "${found.name}" vào bảng dự toán BOQ!`);
+      }
+    });
+  });
+
+  // 2. Chỉnh sửa trực tiếp tên, năng suất, đvt, tổ thợ
+  const updateNormProperty = (code, field, value) => {
+    const currentNorms = getActiveLaborNorms();
+    const target = currentNorms.find(n => n.code === code);
+    if (target) {
+      target[field] = value;
+      saveActiveLaborNorms(currentNorms);
+      showToast(`Đã lưu thay đổi định mức "${target.code}"!`);
+    }
+  };
+
+  tbody.querySelectorAll('.norm-edit-name').forEach(inp => {
+    inp.addEventListener('change', (e) => {
+      updateNormProperty(e.target.dataset.code, 'name', e.target.value.trim());
+    });
+  });
+
+  tbody.querySelectorAll('.norm-edit-note').forEach(inp => {
+    inp.addEventListener('change', (e) => {
+      updateNormProperty(e.target.dataset.code, 'note', e.target.value.trim());
+    });
+  });
+
+  tbody.querySelectorAll('.norm-edit-unit').forEach(inp => {
+    inp.addEventListener('change', (e) => {
+      updateNormProperty(e.target.dataset.code, 'unit', e.target.value.trim());
+    });
+  });
+
+  tbody.querySelectorAll('.norm-edit-prod').forEach(inp => {
+    inp.addEventListener('change', (e) => {
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val) && val > 0) {
+        updateNormProperty(e.target.dataset.code, 'productivityPerManDay', val);
+      }
+    });
+  });
+
+  tbody.querySelectorAll('.norm-edit-trade').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      updateNormProperty(e.target.dataset.code, 'trade', e.target.value);
+    });
+  });
+
+  tbody.querySelectorAll('.norm-edit-weekend').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      updateNormProperty(e.target.dataset.code, 'weekendTag', sel.value);
+    });
+  });
+
+  // 3. Xóa định mức
+  tbody.querySelectorAll('.delete-norm-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const code = e.currentTarget.dataset.code;
+      if (confirm(`Bạn có chắc muốn xóa định mức mã "${code}" khỏi thư viện?`)) {
+        const currentNorms = getActiveLaborNorms();
+        const updated = currentNorms.filter(n => n.code !== code);
+        saveActiveLaborNorms(updated);
+        renderNormsLibraryModal(filterQuery);
+        showToast(`Đã xóa định mức "${code}"!`);
       }
     });
   });
@@ -1237,6 +1386,71 @@ function setupEventListeners() {
 
   document.getElementById('btn-refresh-ai-consult')?.addEventListener('click', () => {
     loadAIConsultingReport(true);
+  });
+
+  // 4. QUẢN LÝ & BỔ SUNG THƯ VIỆN ĐỊNH MỨC
+  const normsSearchInput = document.getElementById('norms-search-input');
+  normsSearchInput?.addEventListener('input', (e) => {
+    renderNormsLibraryModal(e.target.value);
+  });
+
+  const addNormPanel = document.getElementById('add-norm-panel');
+  document.getElementById('btn-toggle-add-norm')?.addEventListener('click', () => {
+    if (!addNormPanel) return;
+    const isHidden = addNormPanel.style.display === 'none';
+    addNormPanel.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) {
+      document.getElementById('new-norm-name')?.focus();
+    }
+  });
+
+  document.getElementById('btn-cancel-add-norm')?.addEventListener('click', () => {
+    if (addNormPanel) addNormPanel.style.display = 'none';
+  });
+
+  const formAddNewNorm = document.getElementById('form-add-new-norm');
+  formAddNewNorm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('new-norm-name')?.value?.trim();
+    const trade = document.getElementById('new-norm-trade')?.value || 'GYPSUM';
+    const unit = document.getElementById('new-norm-unit')?.value?.trim() || 'm2';
+    const prod = parseFloat(document.getElementById('new-norm-prod')?.value || '10');
+    const crew = parseInt(document.getElementById('new-norm-crew')?.value || '2', 10);
+    const weekendTag = document.getElementById('new-norm-weekend')?.value || 'QUIET_WEEKDAY';
+    const note = document.getElementById('new-norm-note')?.value?.trim() || '';
+
+    if (!name) return;
+
+    const currentNorms = getActiveLaborNorms();
+    const newCode = `${trade.slice(0, 3)}-${String(currentNorms.length + 1).padStart(2, '0')}`;
+
+    const newNormItem = {
+      code: newCode,
+      name,
+      trade,
+      unit,
+      productivityPerManDay: prod > 0 ? prod : 10,
+      defaultCrewSize: crew > 0 ? crew : 2,
+      weekendTag,
+      keywords: [name.toLowerCase()],
+      note: note || `Định mức bổ sung mới cho ${name}`
+    };
+
+    currentNorms.unshift(newNormItem);
+    saveActiveLaborNorms(currentNorms);
+
+    formAddNewNorm.reset();
+    if (addNormPanel) addNormPanel.style.display = 'none';
+    renderNormsLibraryModal(normsSearchInput?.value || '');
+    showToast(`Đã bổ sung thành công định mức mới: ${newCode} - ${name}!`);
+  });
+
+  document.getElementById('btn-reset-norms-default')?.addEventListener('click', () => {
+    if (confirm('Bạn có chắc muốn khôi phục toàn bộ Thư viện định mức về nguyên bản mặc định của Crystal Interior?')) {
+      resetLaborNormsToDefault();
+      renderNormsLibraryModal();
+      showToast('Đã khôi phục thư viện định mức về mặc định!');
+    }
   });
 
   const apiKeyForm = document.getElementById('api-key-form');

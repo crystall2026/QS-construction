@@ -57,23 +57,31 @@
       </div>
 
       <div class="project-action-buttons no-print">
-        <button type="button" class="btn-primary" commandfor="modal-new-project" command="show-modal">
-          Tạo Dự Án Mới
+        <button type="button" class="btn-hero btn-hero-primary" commandfor="modal-new-project" command="show-modal">
+          <span class="btn-hero-icon">➕</span>
+          <span class="btn-hero-text">Tạo Dự Án Mới</span>
         </button>
-        <button type="button" class="btn-primary btn-action-focus" commandfor="modal-input-boq" command="show-modal">
-          Nhập Khối Lượng Hoặc Tải BOQ
+        <button type="button" class="btn-hero btn-hero-accent" commandfor="modal-input-boq" command="show-modal">
+          <span class="btn-hero-icon">📥</span>
+          <span class="btn-hero-text">Nhập Khối Lượng Hoặc Tải BOQ</span>
         </button>
-        <button type="button" class="btn-slate" commandfor="modal-schedule-config" command="show-modal">
-          Thiết Lập Lịch & Ngày Khởi Công
+        <button type="button" class="btn-hero btn-hero-slate" commandfor="modal-schedule-config" command="show-modal">
+          <span class="btn-hero-icon">⚙️</span>
+          <span class="btn-hero-text">Thiết Lập Lịch & Khởi Công</span>
         </button>
-        <button type="button" id="btn-open-ai-consulting" class="btn-ai-consult" commandfor="modal-ai-consulting" command="show-modal">
-          💡 Xem Tư Vấn Của AI
+        <button type="button" class="btn-hero btn-hero-gold" commandfor="norms-dialog" command="show-modal">
+          <span class="btn-hero-icon">📖</span>
+          <span class="btn-hero-text">Điều Chỉnh & Bổ Sung Định Mức</span>
         </button>
-        <button type="button" id="btn-export-excel" class="btn-secondary">
-          Tải Excel (.xlsx)
+        <button type="button" id="btn-open-ai-consulting" class="btn-hero btn-hero-ai" commandfor="modal-ai-consulting" command="show-modal">
+          <span class="btn-hero-icon">💡</span>
+          <span class="btn-hero-text">Xem Tư Vấn AI</span>
         </button>
-        <button type="button" id="btn-print-report" class="btn-secondary">
-          In / Tải PDF
+        <button type="button" id="btn-export-excel" class="btn-secondary btn-hero-sub">
+          📊 Tải Excel
+        </button>
+        <button type="button" id="btn-print-report" class="btn-secondary btn-hero-sub">
+          📄 In / Tải PDF
         </button>
       </div>
     </section>
@@ -532,27 +540,108 @@
     </div>
   </dialog>
 
-  <!-- DIALOG THƯ VIỆN ĐỊNH MỨC -->
+  <!-- DIALOG THƯ VIỆN ĐỊNH MỨC & ĐIỀU CHỈNH / BỔ SUNG -->
   <dialog id="norms-dialog">
-    <div class="dialog-inner">
+    <div class="dialog-inner" style="max-width:980px;">
       <div class="dialog-header">
-        <h3>📖 Thư Viện Định Mức Nhân Công & Lưu Ý Thứ 7 - CN (Crystal Interior)</h3>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <h3 style="margin:0;">📖 Thư Viện Định Mức Nhân Công Crystal Interior</h3>
+          <span style="font-size:12px; background:#eff6ff; color:#0f4c81; padding:3px 8px; border-radius:99px; font-weight:700;">
+            Có thể chỉnh sửa & bổ sung trực tiếp
+          </span>
+        </div>
         <button type="button" class="btn-secondary btn-sm" commandfor="norms-dialog" command="close">✕ Đóng</button>
       </div>
-      <p style="margin:0; font-size:13px; color:#475569;">
-        Định mức tính theo <strong>khối lượng hoàn thành của 1 công thợ (8h)</strong> kèm hướng dẫn ngày thường (T2–T6) hay cuối tuần (T7–CN).
-      </p>
-      <div class="table-responsive">
+
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; padding:10px 14px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px;">
+        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:260px;">
+          <span style="font-size:13px; font-weight:700; color:#334155;">🔍 Tìm kiếm:</span>
+          <input
+            type="text"
+            id="norms-search-input"
+            placeholder="Tìm theo tên công việc, mã định mức hoặc tổ thợ..."
+            style="flex:1; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;"
+          />
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" id="btn-toggle-add-norm" class="btn-hero btn-hero-gold btn-sm">
+            ➕ Bổ Sung Định Mức Mới
+          </button>
+          <button type="button" id="btn-reset-norms-default" class="btn-secondary btn-sm" title="Khôi phục lại định mức gốc">
+            🔄 Đặt Lại Gốc
+          </button>
+        </div>
+      </div>
+
+      <!-- FORM THÊM ĐỊNH MỨC MỚI (ẨN/HIỆN KHI BẤM) -->
+      <div id="add-norm-panel" style="display:none; background:#ffffff; border:2px dashed #0284c7; border-radius:8px; padding:16px;">
+        <h4 style="margin:0 0 12px; color:#0369a1; font-size:14px; font-weight:800;">➕ Bổ Sung Hạng Mục Định Mức Nhân Công Mới:</h4>
+        <form id="form-add-new-norm">
+          <div class="modal-grid-2">
+            <div class="form-group">
+              <label for="new-norm-name">Tên Công Việc / Hạng Mục Thi Công:</label>
+              <input type="text" id="new-norm-name" placeholder="VD: Lắp đặt vách kính cường lực 10mm" required />
+            </div>
+            <div class="form-group">
+              <label for="new-norm-trade">Tổ Đội Thợ:</label>
+              <select id="new-norm-trade">
+                <option value="GYPSUM">Thạch Cao (GYPSUM)</option>
+                <option value="PAINT">Sơn Nước (PAINT)</option>
+                <option value="MASON">Xây Tô - Ốp Lát (MASON)</option>
+                <option value="MEP">Điện Nước MEP (MEP)</option>
+                <option value="FLOOR">Sàn Gỗ / Vinyl (FLOOR)</option>
+                <option value="FURNITURE">Nội Thất / Mộc (FURNITURE)</option>
+                <option value="DEMO">Tháo Dỡ / Vệ Sinh (DEMO)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
+            <div class="form-group">
+              <label for="new-norm-unit">ĐVT:</label>
+              <input type="text" id="new-norm-unit" value="m2" required />
+            </div>
+            <div class="form-group">
+              <label for="new-norm-prod">Năng Suất (KL/công):</label>
+              <input type="number" id="new-norm-prod" step="any" min="0.1" value="10" required />
+            </div>
+            <div class="form-group">
+              <label for="new-norm-crew">Số Thợ/Tổ:</label>
+              <input type="number" id="new-norm-crew" min="1" max="20" value="2" required />
+            </div>
+            <div class="form-group">
+              <label for="new-norm-weekend">Lịch T7-CN Tòa Nhà:</label>
+              <select id="new-norm-weekend">
+                <option value="HIGH_NOISE_WEEKEND">Ưu tiên T7-CN (Ồn/Khoan)</option>
+                <option value="LIFT_SMELL_WEEKEND">Tranh thủ T7-CN (Thang/Mùi)</option>
+                <option value="QUIET_WEEKDAY">Làm êm T2-T6 trong nhà</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="new-norm-note">Ghi Chú Điều Phối / Tiêu Chuẩn Kỹ Thuật:</label>
+            <input type="text" id="new-norm-note" placeholder="VD: Bắt buộc khoan bê tông vào T7-CN, ban ngày chỉ ráp khung kính" />
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button type="button" id="btn-cancel-add-norm" class="btn-secondary btn-sm">Hủy</button>
+            <button type="submit" class="btn-hero btn-hero-primary btn-sm">💾 Lưu Vào Thư Viện Định Mức</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-responsive" style="max-height:480px; overflow-y:auto;">
         <table class="qs-table">
           <thead>
             <tr>
-              <th>Mã ĐM</th>
+              <th style="width:75px;">Mã ĐM</th>
               <th>Tên Hạng Mục Công Việc & Lưu Ý Tòa Nhà</th>
-              <th>Tổ Đội</th>
-              <th>Lưu Ý T7-CN</th>
-              <th class="text-center">ĐVT</th>
-              <th class="text-right">Năng Suất Chuẩn</th>
-              <th class="text-center">Thao Tác</th>
+              <th style="width:135px;">Tổ Đội</th>
+              <th style="width:150px;">Lưu Ý T7-CN</th>
+              <th class="text-center" style="width:65px;">ĐVT</th>
+              <th class="text-right" style="width:135px;">Năng Suất (1 công)</th>
+              <th class="text-center" style="width:170px;">Thao Tác</th>
             </tr>
           </thead>
           <tbody id="norms-library-tbody"></tbody>

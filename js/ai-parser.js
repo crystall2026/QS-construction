@@ -1,5 +1,5 @@
 // Bộ xử lý bóc tách BOQ tối ưu chi phí & Token Google Gemini AI
-import { LABOR_NORMS, TRADES, WEEKEND_TAGS } from './norms-data.js';
+import { LABOR_NORMS, TRADES, WEEKEND_TAGS, getActiveLaborNorms } from './norms-data.js';
 
 const DEFAULT_KEY_PARTS = [
   'AQ.Ab8RN6JlRtJM',
@@ -84,8 +84,9 @@ export function matchLaborNorm(taskName, unitHint = '') {
 
   let bestNorm = null;
   let bestScore = -1;
+  const currentNorms = getActiveLaborNorms();
 
-  for (const norm of LABOR_NORMS) {
+  for (const norm of currentNorms) {
     let score = 0;
     for (const kw of norm.keywords) {
       const normKw = normalizeText(kw);
