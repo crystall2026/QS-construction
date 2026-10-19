@@ -73,6 +73,10 @@
           <span class="btn-hero-icon">📖</span>
           <span class="btn-hero-text">Điều Chỉnh & Bổ Sung Định Mức</span>
         </button>
+        <button type="button" id="btn-load-demo-project" class="btn-hero btn-hero-gold">
+          <span class="btn-hero-icon">⚡</span>
+          <span class="btn-hero-text">Xem Dữ Liệu Demo</span>
+        </button>
         <button type="button" id="btn-open-ai-consulting" class="btn-hero btn-hero-ai" commandfor="modal-ai-consulting" command="show-modal">
           <span class="btn-hero-icon">💡</span>
           <span class="btn-hero-text">Xem Tư Vấn AI</span>
@@ -85,6 +89,31 @@
         </button>
       </div>
     </section>
+
+    <!-- TRẠNG THÁI TRỐNG KHI CHƯA CÓ DỰ ÁN / CHƯA NHẬP DỮ LIỆU -->
+    <section id="empty-state-card" class="empty-state-card" style="display:none;">
+      <div class="empty-state-inner">
+        <div class="empty-state-icon">📋</div>
+        <h3 class="empty-state-title">Chưa có dữ liệu dự án thi công nào</h3>
+        <p class="empty-state-desc">
+          Vui lòng bấm <strong>"➕ Tạo Dự Án Mới"</strong> hoặc <strong>"📥 Nhập Khối Lượng Hoặc Tải BOQ"</strong> để tính toán nhân sự, phân bổ thợ và chi phí nhân công.
+        </p>
+        <div class="empty-state-actions">
+          <button type="button" class="btn-hero btn-hero-primary" commandfor="modal-new-project" command="show-modal">
+            ➕ Tạo Dự Án Mới
+          </button>
+          <button type="button" class="btn-hero btn-hero-accent" commandfor="modal-input-boq" command="show-modal">
+            📥 Nhập Khối Lượng Hoặc Tải BOQ
+          </button>
+          <button type="button" id="btn-load-demo-empty" class="btn-hero btn-hero-gold">
+            ⚡ Chạy Thử Dữ Liệu Mẫu (Demo)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- KHỐI DỮ LIỆU HIỂN THỊ KHI ĐÃ CÓ DỰ ÁN (KPIS + 3 BẢNG) -->
+    <div id="project-dashboard-content">
 
     <!-- 4 THẺ KPI TỔNG HỢP CHO SẾP -->
     <section class="kpi-grid" aria-label="Chỉ số nhân công tổng quan">
@@ -219,6 +248,7 @@
         </div>
       </div>
     </section>
+    </div> <!-- /#project-dashboard-content -->
   </main>
 
   <!-- =======================================================================

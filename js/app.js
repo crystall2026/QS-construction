@@ -217,19 +217,20 @@ function buildProjectCalendar(startDateISO, targetWorkingDays, weekendMode) {
 
 // --- 3. APPLICATION STATE ---
 const state = {
-  projectTitle: PROJECT_TEMPLATES.quickSample.title,
-  projectType: PROJECT_TEMPLATES.quickSample.projectType || 'OFFICE_BUILDING',
+  hasProject: false,
+  projectTitle: 'Chưa có dự án thi công',
+  projectType: 'OFFICE_BUILDING',
   startDate: getTodayISOString(),
-  targetDays: PROJECT_TEMPLATES.quickSample.targetDays,
-  weekendMode: PROJECT_TEMPLATES.quickSample.weekendMode || 'WEEKEND_NOISY_FOCUS',
-  difficultyFactor: PROJECT_TEMPLATES.quickSample.difficultyFactor,
+  targetDays: 10,
+  weekendMode: 'WEEKEND_NOISY_FOCUS',
+  difficultyFactor: 1.1,
   hoursPerDay: 8,
   autoScaleCrewToTargetDays: true,
-  executiveNote: 'Định mức đang tính theo năng suất thi công Fitout thực tế của Crystal Interior. Hệ thống đã phân định các việc ồn/khoan đục cần tranh thủ làm vào Thứ 7 & Chủ Nhật.',
+  executiveNote: 'Vui lòng nhập dữ liệu để tính toán nhân sự, chi phí nhân công và lịch Thứ 7 - Chủ Nhật.',
   tradeWages: Object.fromEntries(
     Object.entries(TRADES).map(([k, v]) => [k, v.defaultDailyWage])
   ),
-  items: structuredClone(PROJECT_TEMPLATES.quickSample.items),
+  items: [],
   lastUploadedRawText: ''
 };
 
@@ -478,10 +479,25 @@ function renderAll() {
   const mCalcSummary = document.getElementById('m-calc-date-summary');
   if (mCalcSummary) {
     mCalcSummary.innerHTML = `
-      <div><strong>Khởi công:</strong> ${calc.startDateFormatted}</div>
-      <div style="font-size:15px; font-weight:800; color:#b45309; margin-top:2px;">🏁 Bàn giao: ${calc.endDateFormatted} (${calc.totalCalendarDays} ngày theo lịch)</div>
+      <div><strong>Khởi công:</strong> ${calc.startDateFormatted || 'Chưa thiết lập'}</div>
+      <div style="font-size:15px; font-weight:800; color:#0f4c81; margin-top:2px;">🏁 Bàn giao: ${calc.endDateFormatted || '...'} (${calc.totalCalendarDays || 0} ngày theo lịch)</div>
     `;
   }
+
+  // KIỂM TRA TRẠNG THÁI CÓ DỮ LIỆU DỰ ÁN HAY CHƯA
+  const emptyCard = document.getElementById('empty-state-card');
+  const dashboardContent = document.getElementById('project-dashboard-content');
+  const hasData = (state.hasProject || state.items.length > 0) && calc.enrichedItems.length > 0;
+
+  if (!hasData) {
+    if (emptyCard) emptyCard.style.display = 'block';
+    if (dashboardContent) dashboardContent.style.display = 'none';
+    window.__latestCalcResult = calc;
+    return;
+  }
+
+  if (emptyCard) emptyCard.style.display = 'none';
+  if (dashboardContent) dashboardContent.style.display = 'flex';
 
   // 2. 4 Thẻ KPI Tổng quan
   document.getElementById('kpi-total-mandays').textContent = `${formatNum(calc.totalManDays, 1)} công`;
@@ -1161,6 +1177,7 @@ function setupEventListeners() {
     state.hoursPerDay = typeConfig.defaultShift;
     state.autoScaleCrewToTargetDays = true;
 
+    state.hasProject = true;
     if (tplKey && PROJECT_TEMPLATES[tplKey]) {
       const tpl = PROJECT_TEMPLATES[tplKey];
       state.targetDays = tpl.targetDays;
@@ -1168,16 +1185,17 @@ function setupEventListeners() {
       state.executiveNote = `Đã tạo dự án mới cho "${typeConfig.name}". Nạp khối lượng mẫu từ "${tpl.title}".`;
     } else {
       state.targetDays = 10;
-      state.items = [
-        { code: 'GYP-02', name: 'Thi công vách thạch cao 2 mặt', trade: 'GYPSUM', unit: 'm2', quantity: 100, productivityPerManDay: 9.0, crewSize: 3, weekendTag: 'HIGH_NOISE_WEEKEND' },
-        { code: 'PNT-01', name: 'Bả bột matit & sơn nước hoàn thiện', trade: 'PAINT', unit: 'm2', quantity: 200, productivityPerManDay: 18.0, crewSize: 3, weekendTag: 'QUIET_WEEKDAY' }
-      ];
+      state.items = [];
       state.executiveNote = `Đã khởi tạo dự án mới cho "${typeConfig.name}". Hãy bấm "Nhập khối lượng hoặc tải BOQ" để bắt đầu.`;
     }
 
     renderAll();
     document.getElementById('modal-new-project')?.close();
-    showToast(`Đã tạo dự án mới: ${state.projectTitle}`);
+    if (state.items.length === 0) {
+      showToast(`Đã tạo dự án "${state.projectTitle}". Hãy bấm "Nhập khối lượng hoặc tải BOQ" để bắt đầu!`);
+    } else {
+      showToast(`Đã tạo dự án mới: ${state.projectTitle}`);
+    }
   });
 
   // 2. MODAL KHỐI 1: NHẬP KHỐI LƯỢNG TỔNG HOẶC TẢI BOQ
@@ -1218,6 +1236,10 @@ function setupEventListeners() {
     }
 
     const replaceMode = document.getElementById('quick-replace-checkbox')?.checked ?? true;
+    state.hasProject = true;
+    if (state.projectTitle === 'Chưa có dự án thi công') {
+      state.projectTitle = `Dự toán bóc tách khối lượng (${newItems.length} hạng mục)`;
+    }
     if (replaceMode) {
       state.items = newItems;
     } else {
@@ -1244,6 +1266,7 @@ function setupEventListeners() {
 
     const parsedItems = parseQuickTextLocal(text);
     if (parsedItems.length > 0) {
+      state.hasProject = true;
       state.items = parsedItems;
       state.projectTitle = `Dự toán từ mô tả nhanh (${parsedItems.length} hạng mục)`;
       state.executiveNote = `Đã bóc tách ${parsedItems.length} hạng mục từ câu nhập nhanh của Sếp.`;
@@ -1388,6 +1411,25 @@ function setupEventListeners() {
     loadAIConsultingReport(true);
   });
 
+  const loadDemoDataHandler = () => {
+    const demo = PROJECT_TEMPLATES.quickSample;
+    state.hasProject = true;
+    state.projectTitle = demo.title;
+    state.projectType = demo.projectType || 'OFFICE_BUILDING';
+    state.targetDays = demo.targetDays;
+    state.difficultyFactor = demo.difficultyFactor;
+    state.weekendMode = demo.weekendMode;
+    state.hoursPerDay = 8;
+    state.autoScaleCrewToTargetDays = true;
+    state.items = structuredClone(demo.items);
+    state.executiveNote = 'Đang hiển thị dữ liệu dự án mẫu (Demo): 100m² Vách thạch cao + 200m² Sơn nước + 60m² Ốp lát.';
+    renderAll();
+    showToast('Đã nạp thành công bộ dữ liệu Demo Fitout mẫu để sếp xem!');
+  };
+
+  document.getElementById('btn-load-demo-project')?.addEventListener('click', loadDemoDataHandler);
+  document.getElementById('btn-load-demo-empty')?.addEventListener('click', loadDemoDataHandler);
+
   // 4. QUẢN LÝ & BỔ SUNG THƯ VIỆN ĐỊNH MỨC
   const normsSearchInput = document.getElementById('norms-search-input');
   normsSearchInput?.addEventListener('input', (e) => {
@@ -1517,6 +1559,7 @@ async function triggerGeminiTextAnalysis(text) {
     setLoadingStatus(true, 'Đang dùng Google Gemini AI phân tích khối lượng & lịch làm việc Thứ 7 - CN...');
     const aiRes = await analyzeWithGeminiAI({ textContent: text });
     if (aiRes?.items?.length > 0) {
+      state.hasProject = true;
       state.items = aiRes.items;
       if (aiRes.projectTitle) state.projectTitle = aiRes.projectTitle;
       if (aiRes.recommendedTargetDays) state.targetDays = aiRes.recommendedTargetDays;
@@ -1548,6 +1591,7 @@ async function handleUploadedBOQFile(file) {
       state.lastUploadedRawText = rawText;
 
       if (items.length > 0) {
+        state.hasProject = true;
         state.items = items;
         state.projectTitle = `BOQ: ${file.name.replace(/\.[^.]+$/, '')}`;
         state.autoScaleCrewToTargetDays = true;
@@ -1568,6 +1612,7 @@ async function handleUploadedBOQFile(file) {
         pdfBase64: base64Data
       });
       if (aiRes?.items?.length > 0) {
+        state.hasProject = true;
         state.items = aiRes.items;
         state.projectTitle = aiRes.projectTitle || `BOQ PDF: ${file.name.replace(/\.pdf$/i, '')}`;
         if (aiRes.recommendedTargetDays) state.targetDays = aiRes.recommendedTargetDays;
