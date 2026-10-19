@@ -189,13 +189,13 @@ button {
 
 .btn-primary,
 .btn-secondary,
-.btn-accent,
-.btn-gold,
+.btn-slate,
+.btn-ai-consult,
 .btn-header {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 9px 15px;
+  padding: 9px 16px;
   border-radius: var(--radius-sm);
   font-size: 13.5px;
   font-weight: 700;
@@ -205,27 +205,39 @@ button {
 }
 
 .btn-primary {
-  background: var(--brand-primary);
+  background: #0f4c81;
   color: #ffffff;
 }
 .btn-primary:hover {
-  background: var(--brand-dark);
+  background: #0b375d;
 }
 
-.btn-accent {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+.btn-action-focus {
+  background: #0284c7;
   color: #ffffff;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
 }
-.btn-accent:hover {
-  filter: brightness(1.08);
+.btn-action-focus:hover {
+  background: #0369a1;
 }
 
-.btn-gold {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+.btn-slate {
+  background: #334155;
   color: #ffffff;
 }
-.btn-gold:hover {
-  filter: brightness(1.08);
+.btn-slate:hover {
+  background: #1e293b;
+}
+
+.btn-ai-consult {
+  background: #f8fafc;
+  color: #0f4c81;
+  border: 1.5px solid #0f4c81;
+  font-weight: 700;
+}
+.btn-ai-consult:hover {
+  background: #eff6ff;
+  border-color: #0369a1;
 }
 
 .btn-secondary {
@@ -235,7 +247,7 @@ button {
 }
 .btn-secondary:hover {
   background: var(--bg-subtle);
-  border-color: var(--brand-secondary);
+  border-color: #0f4c81;
 }
 
 .btn-header {
@@ -253,13 +265,14 @@ button {
 }
 
 /* ==========================================================================
-   KHU VỰC KHỐI MÀU GỌN GÀNG (COLOR-CODED ZONE BLOCKS)
+   KHU VỰC KHỐI BẢNG XÁM XANH NHẸ NHÀNG (CALM SLATE-BLUE ZONES)
    ========================================================================== */
 .zone-block {
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  border: 2px solid transparent;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
 }
 
 .zone-banner {
@@ -279,68 +292,109 @@ button {
 }
 
 .zone-step-badge {
-  background: rgba(255, 255, 255, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   color: #ffffff;
   padding: 3px 8px;
   border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 800;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .zone-banner h2 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 15.5px;
+  font-weight: 700;
   color: #ffffff;
 }
 
 .zone-banner p {
   margin: 2px 0 0;
-  font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  color: #cbd5e1;
 }
 
 .zone-body {
-  padding: 18px 20px;
+  padding: 16px 20px;
+  background: #ffffff;
 }
 
-/* Khối Tư Vấn & Lịch Thứ 7 - CN (Vàng Cam) */
-.zone-amber {
-  background: #fffbeb;
-  border-color: #d97706;
+/* Bảng 1: Phân Bổ Tổ Đội & Chi Phí (Xám Xanh Slate-Navy) */
+.zone-table-1 {
+  border-color: #94a3b8;
 }
-.zone-amber .zone-banner {
-  background: linear-gradient(90deg, #b45309 0%, #d97706 100%);
-}
-
-/* Khối Bảng 1: Phân Bổ Tổ Đội & Chi Phí (Xanh Ngọc) */
-.zone-emerald {
-  background: #ecfdf5;
-  border-color: #059669;
-}
-.zone-emerald .zone-banner {
-  background: linear-gradient(90deg, #047857 0%, #059669 100%);
+.zone-table-1 .zone-banner {
+  background: linear-gradient(90deg, #1e293b 0%, #334155 100%);
 }
 
-/* Khối Bảng 2: Biểu Đồ Lịch T7-CN (Tím Indigo) */
-.zone-indigo {
-  background: #eef2ff;
-  border-color: #4f46e5;
+/* Bảng 2: Biểu Đồ Lịch T7-CN (Xám Xanh Trung Tính Mát Mắt) */
+.zone-table-2 {
+  border-color: #94a3b8;
 }
-.zone-indigo .zone-banner {
-  background: linear-gradient(90deg, #3730a3 0%, #4f46e5 100%);
+.zone-table-2 .zone-banner {
+  background: linear-gradient(90deg, #0f4c81 0%, #1e3a5f 100%);
 }
 
-/* Khối Bảng 3: Chi Tiết BOQ (Xanh Cổ Vịt Teal) */
-.zone-teal {
-  background: #f0fdfa;
-  border-color: #0d9488;
+/* Bảng 3: Chi Tiết BOQ (Xám Xanh Tinh Tế) */
+.zone-table-3 {
+  border-color: #94a3b8;
 }
-.zone-teal .zone-banner {
-  background: linear-gradient(90deg, #0f766e 0%, #0d9488 100%);
+.zone-table-3 .zone-banner {
+  background: linear-gradient(90deg, #334155 0%, #475569 100%);
+}
+
+/* Modal AI Consulting */
+.ai-consulting-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ai-consult-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  color: #334155;
+  font-size: 13px;
+}
+
+.ai-consult-content-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid #0f4c81;
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #1e293b;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.ai-consult-content-box h3,
+.ai-consult-content-box h4 {
+  margin: 12px 0 6px;
+  color: #0f4c81;
+  font-size: 14px;
+  font-weight: 700;
+}
+.ai-consult-content-box h3:first-child {
+  margin-top: 0;
+}
+
+.ai-consult-content-box ul {
+  margin: 4px 0 10px;
+  padding-left: 20px;
+}
+
+.ai-consult-content-box li {
+  margin-bottom: 4px;
 }
 
 /* 3 Cột Tư Vấn Việc Tranh Thủ Thứ 7 - CN Trong Tòa Nhà */

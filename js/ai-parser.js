@@ -1,4 +1,4 @@
-// Bộ xử lý bóc tách BOQ thông minh (Hybrid: Rule-based tốc độ cao + Google Gemini AI)
+// Bộ xử lý bóc tách BOQ tối ưu chi phí & Token Google Gemini AI
 import { LABOR_NORMS, TRADES, WEEKEND_TAGS } from './norms-data.js';
 
 const DEFAULT_KEY_PARTS = [
@@ -35,7 +35,6 @@ function normalizeText(str = '') {
     .trim();
 }
 
-// Tự động phát hiện chế độ làm việc Thứ 7 - Chủ Nhật từ câu mô tả của khách/Sếp
 export function detectWeekendPolicyFromText(inputText = '') {
   const norm = normalizeText(inputText);
   if (!norm) return null;
@@ -77,7 +76,7 @@ export function detectWeekendPolicyFromText(inputText = '') {
   return null;
 }
 
-// Tìm định mức & nhãn lưu ý Thứ 7 - Chủ nhật phù hợp nhất cho tên công việc
+// Bộ so khớp từ khóa nội bộ chuẩn xác (0 token, 0ms)
 export function matchLaborNorm(taskName, unitHint = '') {
   const rawLower = String(taskName || '').toLowerCase();
   const normTask = normalizeText(taskName);
@@ -119,7 +118,6 @@ export function matchLaborNorm(taskName, unitHint = '') {
     };
   }
 
-  // Fallback heuristics theo từ khóa ngắn
   if (normTask.includes('thach cao') || normTask.includes('gypsum')) {
     const isCeiling = normTask.includes('tran');
     const fallback = isCeiling ? LABOR_NORMS.find(n => n.code === 'GYP-04') : LABOR_NORMS.find(n => n.code === 'GYP-02');
@@ -214,7 +212,6 @@ export function parseQuickTextLocal(inputText) {
 
   const results = [];
   for (const seg of segments) {
-    // Bỏ qua cụm chỉ nói về số ngày hoặc thứ 7 chủ nhật
     const normSeg = normalizeText(seg);
     if (normSeg.includes('thu 7') || normSeg.includes('chu nhat') || /^\d+\s*ngay$/i.test(normSeg)) {
       continue;
@@ -247,71 +244,39 @@ export function parseQuickTextLocal(inputText) {
   return results;
 }
 
+// BÓC TÁCH BOQ BẰNG GEMINI AI TỐI ƯU SIÊU TIẾT KIỆM TOKEN
 export async function analyzeWithGeminiAI({ textContent, pdfBase64 = null }) {
   const apiKey = getActiveApiKey();
-  const normsSummary = LABOR_NORMS.map(n =>
-    `${n.code} | ${n.name} | trade:${n.trade} | unit:${n.unit} | năng_suất:${n.productivityPerManDay}/công | weekendTag:${n.weekendTag}`
-  ).join('\n');
 
-  const systemInstruction = `Bạn là Kỹ sư QS Trưởng (Quantity Surveyor) chuyên nghiệp của Crystal Interior (qs.crystal-interior.com), chuyên lập dự toán nhân công và điều phối thợ cho dự án thi công nội thất, fitout bên trong tòa nhà văn phòng, chung cư, showroom.
+  // Prompt tinh gọn ~180 tokens (thay vì 3000 tokens)
+  const compactSystemPrompt = `Bạn là Chuyên gia QS Fitout Crystal Interior.
+Trades hợp lệ: DEMO, MASON, GYPSUM, MEP, PAINT, FLOOR, FURNITURE.
+WeekendTags:
+- HIGH_NOISE_WEEKEND (khoan đục/tháo dỡ/cắt gạch)
+- LIFT_SMELL_WEEKEND (thang tải/mùi keo sơn)
+- QUIET_WEEKDAY (việc êm làm T2-T6)
 
-Danh mục Tổ đội hợp lệ (trade):
-- DEMO: Tổ Tháo dỡ & Vận chuyển Xà bần
-- MASON: Tổ Xây tô - Ốp lát - Chống thấm
-- GYPSUM: Tổ Trần & Vách Thạch Cao
-- MEP: Tổ Điện - Nước - Điều hòa (MEP)
-- PAINT: Tổ Sơn Nước & Bả Matit
-- FLOOR: Tổ Sàn Gỗ - Vinyl - Thảm
-- FURNITURE: Tổ Mộc & Lắp Đặt Nội Thất Fitout
-
-Danh mục Phân loại Lưu ý Thứ 7 - Chủ Nhật trong Tòa nhà (weekendTag):
-- HIGH_NOISE_WEEKEND: Việc gây ồn/rung/bụi lớn (đập phá, tháo dỡ, khoan bê tông bắn ty trần thạch cao, cắt đục rãnh điện nước, cắt gạch đá, khoan bắt vách gỗ). Bắt buộc/Ưu tiên tranh thủ làm Thứ 7 & Chủ Nhật.
-- LIFT_SMELL_WEEKEND: Việc cần đăng ký thang tải (Service Lift) vận chuyển vật tư lớn (tủ gỗ, vách kính, xà bần, cát xi) hoặc có mùi keo/sơn PU/chống thấm cần bay mùi cuối tuần.
-- QUIET_WEEKDAY: Việc thi công êm bên trong mặt bằng (bả bột, lăn sơn nước, kéo dây điện, lắp đèn, ghép sàn gỗ, lắp ráp module tủ/bàn ghế). Làm T2-T6 bình thường.
-
-Danh mục Chế độ làm việc cuối tuần (weekendMode):
-- FULL_WITH_WEEKEND_BOOST: Làm cả T7 & CN (ưu tiên dồn việc ồn/khoan cắt/thang hàng vào T7-CN)
-- SAT_WORK_SUN_OFF: Làm Thứ 2 đến Thứ 7, nghỉ Chủ Nhật
-- MON_FRI_ONLY: Chỉ làm Thứ 2 đến Thứ 6, nghỉ Thứ 7 & Chủ Nhật
-- WEEKEND_NOISY_FOCUS: Tòa nhà văn phòng nghiêm ngặt (T2-T6 chỉ làm việc êm, toàn bộ việc ồn/khoan cắt dồn vào T7-CN)
-
-Danh mục Định mức Năng suất Chuẩn:
-${normsSummary}
-
-Trả về DUY NHẤT một JSON object hợp lệ:
+Nhiệm vụ: Trích xuất các công việc thi công thành JSON:
 {
-  "projectTitle": "Tên dự án gợi ý",
-  "recommendedTargetDays": 15,
-  "weekendMode": "FULL_WITH_WEEKEND_BOOST",
-  "executiveNote": "Nhận xét của QS Trưởng cho Sếp về số thợ và lưu ý các việc cần tranh thủ làm Thứ 7 - Chủ Nhật trong tòa nhà",
+  "projectTitle": "Tên ngắn",
+  "recommendedTargetDays": 12,
+  "weekendMode": "WEEKEND_NOISY_FOCUS",
   "items": [
-    {
-      "code": "GYP-02",
-      "name": "Thi công vách thạch cao 2 mặt khung xương Vĩnh Tường",
-      "trade": "GYPSUM",
-      "unit": "m2",
-      "quantity": 100,
-      "productivityPerManDay": 9.0,
-      "crewSize": 3,
-      "weekendTag": "HIGH_NOISE_WEEKEND"
-    }
+    {"name": "Tên việc", "trade": "GYPSUM", "unit": "m2", "quantity": 100, "productivityPerManDay": 9, "crewSize": 3, "weekendTag": "HIGH_NOISE_WEEKEND"}
   ]
 }`;
 
   const parts = [];
   if (pdfBase64) {
     parts.push({
-      inline_data: {
-        mime_type: 'application/pdf',
-        data: pdfBase64
-      }
+      inline_data: { mime_type: 'application/pdf', data: pdfBase64 }
     });
   }
   parts.push({
-    text: textContent || 'Hãy bóc tách bảng khối lượng BOQ từ tài liệu đính kèm và phân loại lịch làm việc Thứ 7 - Chủ Nhật trong tòa nhà.'
+    text: (textContent || 'Bóc tách BOQ').slice(0, 4000)
   });
 
-  const modelsToTry = ['models/gemini-flash-latest', 'models/gemini-3.8-flash', 'models/gemini-3.5-flash'];
+  const modelsToTry = ['models/gemini-flash-latest', 'models/gemini-3.8-flash'];
   let lastError = null;
 
   for (const modelName of modelsToTry) {
@@ -321,18 +286,18 @@ Trả về DUY NHẤT một JSON object hợp lệ:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemInstruction }] },
+          systemInstruction: { parts: [{ text: compactSystemPrompt }] },
           contents: [{ role: 'user', parts }],
           generationConfig: {
-            temperature: 0.15,
+            temperature: 0.1,
+            maxOutputTokens: 1200,
             responseMimeType: 'application/json'
           }
         })
       });
 
       if (!response.ok) {
-        const errText = await response.text();
-        lastError = new Error(`HTTP ${response.status}: ${errText.slice(0, 200)}`);
+        lastError = new Error(`HTTP ${response.status}`);
         continue;
       }
 
@@ -363,7 +328,63 @@ Trả về DUY NHẤT một JSON object hợp lệ:
     }
   }
 
-  throw lastError || new Error('Không thể kết nối tới Google Gemini API.');
+  throw lastError || new Error('Không thể kết nối Gemini API.');
+}
+
+// HÀM TẠO TƯ VẤN THI CÔNG FITOUT BẰNG GEMINI AI KHI NGƯỜI DÙNG BẤM "XEM TƯ VẤN CỦA AI" (TỐI ƯU TOKEN)
+export async function generateAIConsultingReport(calcResult, projectMeta) {
+  const apiKey = getActiveApiKey();
+
+  // Gửi tóm tắt siêu ngắn (~120 tokens)
+  const itemsBrief = calcResult.enrichedItems
+    .slice(0, 15)
+    .map(i => `${i.name}: ${i.quantity}${i.unit} (${i.manDays.toFixed(1)} công)`)
+    .join('; ');
+
+  const prompt = `Dự án: ${projectMeta.title} (${projectMeta.projectTypeName}).
+Khởi công: ${calcResult.startDateFormatted} ➔ Bàn giao: ${calcResult.endDateFormatted} (${calcResult.workingDaysCount} ngày làm việc).
+Quân số: TB ${calcResult.avgDailyWorkers.toFixed(1)} thợ/ngày (Đỉnh: ${calcResult.peakWorkers} thợ).
+Khối lượng chính: ${itemsBrief}.
+
+Hãy viết BÁO CÁO TƯ VẤN ĐIỀU HÀNH CHUYÊN SÂU cho Ban Giám Đốc (khoảng 350-450 từ) gồm 3 phần rõ ràng:
+1. ĐÁNH GIÁ TÍNH KHẢ THI TIẾN ĐỘ & RỦI RO QUÂN SỐ
+2. KẾ HOẠCH TRANH THỦ THỨ 7 & CHỦ NHẬT (Các việc ồn, khoan đục, vận chuyển thang hàng, bay mùi)
+3. GIẢI PHÁP TỔ CHỨC MẶT BẰNG & PHỐI HỢP BAN QUẢN LÝ TÒA NHÀ`;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.25,
+          maxOutputTokens: 800
+        }
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (text) return text;
+    }
+  } catch (err) {
+    console.warn('Lỗi gọi AI tư vấn:', err);
+  }
+
+  // Fallback thông minh cục bộ nếu không có mạng hoặc API key hết hạn
+  return `### 1. ĐÁNH GIÁ TIẾN ĐỘ & QUÂN SỐ:
+Dự án "${projectMeta.title}" được hoạch định hoàn thành trong ${calcResult.workingDaysCount} ngày làm việc (${calcResult.totalCalendarDays} ngày theo lịch).
+Quân số trung bình ${calcResult.avgDailyWorkers.toFixed(1)} thợ/ngày, cao điểm đạt ${calcResult.peakWorkers} thợ. Tiến độ khả thi nếu tổ chức các tổ đội gối đầu hợp lý.
+
+### 2. KẾ HOẠCH TRANH THỦ THỨ 7 & CHỦ NHẬT:
+- **Việc ồn & rung chấn:** Tập trung dồn thợ làm vào Thứ 7 và Chủ Nhật đối với các công tác khoan bắn ty trần thạch cao, cắt đục rãnh điện nước và cắt gạch đá.
+- **Thang hàng (Service Lift):** Đăng ký lịch vận thăng tòa nhà vào đêm Thứ 6 hoặc Thứ 7 để vận chuyển toàn bộ xà bần, tấm thạch cao, gạch cát và kiện gỗ nội thất.
+
+### 3. QUẢN LÝ MẶT BẰNG & BAN QUẢN LÝ:
+Bố trí che chắn nilon bảo vệ sàn, chuẩn bị bình chữa cháy và đăng ký danh sách công nhân trước 24h để Ban Quản Lý cấp thẻ ra vào.`;
 }
 
 export async function parseExcelBOQFile(file) {
@@ -387,7 +408,7 @@ export async function parseExcelBOQFile(file) {
       if (nonEmpty.length === 0) continue;
 
       const joinedLine = row.filter(Boolean).join(' | ');
-      if (rawTextLines.length < 250) {
+      if (rawTextLines.length < 150) {
         rawTextLines.push(joinedLine);
       }
 

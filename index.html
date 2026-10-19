@@ -58,19 +58,22 @@
 
       <div class="project-action-buttons no-print">
         <button type="button" class="btn-primary" commandfor="modal-new-project" command="show-modal">
-          ➕ Tạo Dự Án Mới
+          Tạo Dự Án Mới
         </button>
-        <button type="button" class="btn-accent" commandfor="modal-input-boq" command="show-modal">
-          📥 Nhập Khối Lượng Hoặc Tải BOQ
+        <button type="button" class="btn-primary btn-action-focus" commandfor="modal-input-boq" command="show-modal">
+          Nhập Khối Lượng Hoặc Tải BOQ
         </button>
-        <button type="button" class="btn-gold" commandfor="modal-schedule-config" command="show-modal">
-          ⚙️ Thiết Lập Lịch & Ngày Khởi Công
+        <button type="button" class="btn-slate" commandfor="modal-schedule-config" command="show-modal">
+          Thiết Lập Lịch & Ngày Khởi Công
+        </button>
+        <button type="button" id="btn-open-ai-consulting" class="btn-ai-consult" commandfor="modal-ai-consulting" command="show-modal">
+          💡 Xem Tư Vấn Của AI
         </button>
         <button type="button" id="btn-export-excel" class="btn-secondary">
-          📊 Tải Excel (.xlsx)
+          Tải Excel (.xlsx)
         </button>
         <button type="button" id="btn-print-report" class="btn-secondary">
-          📄 In / Tải PDF
+          In / Tải PDF
         </button>
       </div>
     </section>
@@ -86,7 +89,7 @@
       <div class="kpi-card kpi-amber">
         <div class="kpi-label">2. Tiến Độ & Ngày Bàn Giao</div>
         <div id="kpi-target-days" class="kpi-value">10 ngày</div>
-        <span id="kpi-urgency-badge" class="status-pill pill-ok">✅ Tiến độ khả thi</span>
+        <span id="kpi-urgency-badge" class="status-pill pill-ok">Tiến độ khả thi</span>
       </div>
 
       <div class="kpi-card kpi-emerald">
@@ -102,48 +105,13 @@
       </div>
     </section>
 
-    <!-- KHỐI TƯ VẤN & KẾ HOẠCH TRANH THỦ THỨ 7 - CHỦ NHẬT TRONG TÒA NHÀ -->
-    <section class="zone-block zone-amber">
-      <div class="zone-banner">
-        <div class="zone-banner-title">
-          <span class="zone-step-badge">TƯ VẤN THI CÔNG</span>
-          <div>
-            <h2>🏢 Bảng Tư Vấn & Kế Hoạch Tranh Thủ Làm Thứ 7 - Chủ Nhật Trong Tòa Nhà (Fitout & Nội Thất)</h2>
-            <p>Hệ thống tự động phân loại các hạng mục trong BOQ hiện tại theo quy định tiếng ồn và thang tải của Ban Quản Lý</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="zone-body">
-        <div class="building-fitout-cards">
-          <div class="fitout-rule-card rule-noisy">
-            <h3>🔴 1. Việc Gây Ồn/Khoan Đục — TRANH THỦ T7 & CN</h3>
-            <p>BQL cấm khoan đục giờ hành chính T2–T6. Bắt buộc dồn quân làm dứt điểm vào <strong>Thứ 7 & Chủ Nhật</strong>:</p>
-            <ul id="weekend-noisy-list"></ul>
-          </div>
-
-          <div class="fitout-rule-card rule-lift">
-            <h3>🟠 2. Việc Dùng Thang Tải & Bay Mùi — ƯU TIÊN T7 & CN</h3>
-            <p>Đăng ký thang hàng (Service Lift) và thi công vật tư có mùi keo/sơn PU vào <strong>cuối tuần</strong> để kịp bay mùi:</p>
-            <ul id="weekend-lift-list"></ul>
-          </div>
-
-          <div class="fitout-rule-card rule-quiet">
-            <h3>🟢 3. Việc Thi Công Êm Trong Nhà — LÀM T2 ĐẾN T6</h3>
-            <p>Bố trí thợ thi công êm ái, lắp ráp module sản xuất sẵn từ xưởng đều đặn từ <strong>Thứ 2 đến Thứ 6</strong>:</p>
-            <ul id="weekday-quiet-list"></ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- BẢNG 1 (KHỐI XANH NGỌC): TỔNG HỢP PHÂN BỔ THỢ THEO TỔ ĐỘI & CHI PHÍ -->
-    <section class="zone-block zone-emerald">
+    <!-- BẢNG 1: TỔNG HỢP PHÂN BỔ THỢ THEO TỔ ĐỘI & CHI PHÍ -->
+    <section class="zone-block zone-table-1">
       <div class="zone-banner">
         <div class="zone-banner-title">
           <span class="zone-step-badge">BẢNG 1 TRÌNH SẾP</span>
           <div>
-            <h2>👷 Bảng 1: Tổng Hợp Phân Bổ Số Thợ, Lịch Vào Việc & Chi Phí Nhân Công Theo Tổ Đội</h2>
+            <h2>Bảng 1: Tổng Hợp Phân Bổ Số Thợ, Lịch Vào Việc & Chi Phí Nhân Công Theo Tổ Đội</h2>
             <p>Sếp nhìn vào thấy ngay: Cần gọi những đội thợ nào, mỗi đội bao nhiêu người/ngày, làm từ ngày nào đến ngày nào và tiền công từng tổ</p>
           </div>
         </div>
@@ -175,13 +143,13 @@
       </div>
     </section>
 
-    <!-- BẢNG 2 (KHỐI TÍM INDIGO): LỊCH ĐIỀU PHỐI THỢ THEO NGÀY CÓ THỨ 7 & CHỦ NHẬT -->
-    <section class="zone-block zone-indigo">
+    <!-- BẢNG 2: LỊCH ĐIỀU PHỐI THỢ THEO NGÀY CÓ THỨ 7 & CHỦ NHẬT -->
+    <section class="zone-block zone-table-2">
       <div class="zone-banner">
         <div class="zone-banner-title">
           <span class="zone-step-badge">BẢNG 2 TIẾN ĐỘ NGÀY</span>
           <div>
-            <h2>📅 Bảng 2: Biểu Đồ Lịch Điều Phối Quân Số Thợ Từng Ngày (Có Thứ 2 ➔ Thứ 7 & Chủ Nhật)</h2>
+            <h2>Bảng 2: Biểu Đồ Lịch Điều Phối Quân Số Thợ Từng Ngày (Có Thứ 2 ➔ Thứ 7 & Chủ Nhật)</h2>
             <p>Cột màu <strong>Vàng Cam là Thứ 7 (T7)</strong>, cột màu <strong>Đỏ là Chủ Nhật (CN)</strong>. Ký hiệu <strong>🔥</strong> là ngày tăng cường thợ xử lý việc ồn/khoan đục.</p>
           </div>
         </div>
@@ -198,22 +166,22 @@
       </div>
     </section>
 
-    <!-- BẢNG 3 (KHỐI XANH CỔ VỊT TEAL): CHI TIẾT BOQ TIỀN NHÂN CÔNG & ĐỊNH MỨC -->
-    <section class="zone-block zone-teal">
+    <!-- BẢNG 3: CHI TIẾT BOQ TIỀN NHÂN CÔNG & ĐỊNH MỨC -->
+    <section class="zone-block zone-table-3">
       <div class="zone-banner">
         <div class="zone-banner-title">
           <span class="zone-step-badge">BẢNG 3 CHI TIẾT BOQ</span>
           <div>
-            <h2>📋 Bảng 3: Chi Tiết Khối Lượng BOQ, Định Mức Năng Suất & Phân Loại Việc Làm Thứ 7 - CN</h2>
-            <p>Có thể nhấp trực tiếp vào từng ô để đổi <strong>Khối lượng</strong>, <strong>Định mức (KL/công)</strong>, <strong>Số thợ/ngày</strong> hoặc đổi nhãn <strong>Ưu tiên T7-CN / Làm T2-T6</strong></p>
+            <h2>Bảng 3: Chi Tiết Khối Lượng BOQ, Định Mức Năng Suất & Phân Loại Việc Làm Thứ 7 - CN</h2>
+            <p>Nhấp trực tiếp vào từng ô để đổi <strong>Khối lượng</strong>, <strong>Định mức (KL/công)</strong>, <strong>Số thợ/ngày</strong> hoặc đổi nhãn <strong>Ưu tiên T7-CN / Làm T2-T6</strong></p>
           </div>
         </div>
         <div class="no-print" style="display:flex; gap:8px;">
-          <button type="button" id="btn-add-blank-row" class="btn-header btn-gold btn-sm">
+          <button type="button" id="btn-add-blank-row" class="btn-slate btn-sm">
             + Thêm Dòng Công Việc
           </button>
-          <button type="button" class="btn-header btn-sm" commandfor="norms-dialog" command="show-modal">
-            📚 Chọn từ Thư viện Định mức
+          <button type="button" class="btn-slate btn-sm" commandfor="norms-dialog" command="show-modal">
+            Thư Viện Định Mức
           </button>
         </div>
       </div>
@@ -244,6 +212,57 @@
       </div>
     </section>
   </main>
+
+  <!-- =======================================================================
+       MODAL TƯ VẤN CỦA AI (BẬT KHI NHẤP "💡 XEM TƯ VẤN CỦA AI")
+       ======================================================================= -->
+  <dialog id="modal-ai-consulting">
+    <div class="dialog-inner" style="max-width:820px;">
+      <div class="dialog-header">
+        <h3>💡 Báo Cáo Tư Vấn Chuyên Sâu Của AI & Chiến Lược Thi Công</h3>
+        <button type="button" class="btn-secondary btn-sm" commandfor="modal-ai-consulting" command="close">✕ Đóng</button>
+      </div>
+
+      <div class="ai-consulting-body">
+        <div id="ai-consulting-loading" class="ai-consult-loading" style="display:none;">
+          <div class="spinner"></div>
+          <p>Đang tổng hợp dữ liệu BOQ và tạo khuyến nghị thi công tối ưu cho Ban Giám Đốc...</p>
+        </div>
+
+        <div id="ai-consulting-content" class="ai-consult-content-box">
+          <!-- Nội dung do JS render hoặc gọi Gemini AI -->
+        </div>
+
+        <div style="margin-top:16px;">
+          <h4 style="margin:0 0 8px; font-size:14px; color:#1e293b;">📋 Phân loại hạng mục BOQ theo điều kiện tòa nhà:</h4>
+          <div class="building-fitout-cards">
+            <div class="fitout-rule-card rule-noisy">
+              <h3>🔴 1. Việc Ồn / Khoan Đục — TRANH THỦ T7 & CN</h3>
+              <p>BQL cấm khoan đục giờ hành chính T2–T6. Bắt buộc dồn quân làm dứt điểm vào <strong>Thứ 7 & Chủ Nhật</strong>:</p>
+              <ul id="weekend-noisy-list"></ul>
+            </div>
+
+            <div class="fitout-rule-card rule-lift">
+              <h3>🟠 2. Thang Tải & Bay Mùi — ƯU TIÊN T7 & CN</h3>
+              <p>Đăng ký thang hàng (Service Lift) và thi công vật tư mùi keo/sơn PU vào <strong>cuối tuần</strong> để kịp bay mùi:</p>
+              <ul id="weekend-lift-list"></ul>
+            </div>
+
+            <div class="fitout-rule-card rule-quiet">
+              <h3>🟢 3. Thi Công Êm Trong Nhà — LÀM T2 ĐẾN T6</h3>
+              <p>Bố trí thợ thi công êm ái, lắp ráp module sản xuất sẵn từ xưởng đều đặn từ <strong>Thứ 2 đến Thứ 6</strong>:</p>
+              <ul id="weekday-quiet-list"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; pt:8px; border-top:1px solid #e2e8f0;">
+        <span style="font-size:12px; color:#64748b;">Khuyến nghị được tạo dựa trên định mức Crystal Interior & AI Google Gemini</span>
+        <button type="button" id="btn-refresh-ai-consult" class="btn-slate btn-sm">🔄 Tạo Lại Phân Tích Mới</button>
+      </div>
+    </div>
+  </dialog>
 
   <!-- =======================================================================
        MODAL 1: NHẬP KHỐI LƯỢNG TỔNG HOẶC TẢI BOQ (EXCEL / PDF / AI)
@@ -388,36 +407,36 @@
   <dialog id="modal-schedule-config">
     <div class="dialog-inner" style="max-width:680px;">
       <div class="dialog-header">
-        <h3>⚙️ Thiết Lập Chế Độ Làm Việc, Ngày Khởi Công & Mặt Bằng</h3>
+        <h3>Thiết Lập Chế Độ Làm Việc, Ngày Khởi Công & Mặt Bằng</h3>
         <button type="button" class="btn-secondary btn-sm" commandfor="modal-schedule-config" command="close">✕ Đóng</button>
       </div>
 
       <form id="form-schedule-config">
         <div class="modal-grid-2">
           <div class="form-group">
-            <label for="m-project-type-select">🏢 Loại Hình Công Trình:</label>
+            <label for="m-project-type-select">Loại Hình Công Trình:</label>
             <select id="m-project-type-select">
-              <option value="OFFICE_BUILDING">🏢 Tòa Nhà Văn Phòng (Khắt khe tiếng ồn T2-T6)</option>
-              <option value="APARTMENT">🏠 Khu Căn Hộ Chung Cư (Nghỉ trưa & nghỉ Chủ Nhật)</option>
-              <option value="TOWNHOUSE">🏡 Nhà Phố / Biệt Thự (Mặt bằng độc lập, làm cả T7-CN)</option>
-              <option value="SHOPHOUSE_MALL">🛍️ Shophouse / TTTM (Chỉ cho phép làm ca đêm)</option>
+              <option value="OFFICE_BUILDING">Tòa Nhà Văn Phòng (Khắt khe tiếng ồn T2-T6)</option>
+              <option value="APARTMENT">Khu Căn Hộ Chung Cư (Nghỉ trưa & nghỉ Chủ Nhật)</option>
+              <option value="TOWNHOUSE">Nhà Phố / Biệt Thự (Mặt bằng độc lập, làm cả T7-CN)</option>
+              <option value="SHOPHOUSE_MALL">Shophouse / TTTM (Chỉ cho phép làm ca đêm)</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label for="m-start-date-input">📅 Ngày Bắt Đầu Khởi Công:</label>
+            <label for="m-start-date-input">Ngày Bắt Đầu Khởi Công:</label>
             <input type="date" id="m-start-date-input" required />
           </div>
         </div>
 
         <div class="modal-grid-2">
           <div class="form-group">
-            <label for="m-target-days-input">🛠️ Số Ngày Làm Việc Thực Tế Mục Tiêu:</label>
+            <label for="m-target-days-input">Số Ngày Làm Việc Thực Tế Mục Tiêu:</label>
             <input type="number" id="m-target-days-input" min="1" max="365" required />
           </div>
 
           <div class="form-group">
-            <label for="m-shift-select">⏰ Thời Gian Làm Việc / Ca:</label>
+            <label for="m-shift-select">Thời Gian Làm Việc / Ca:</label>
             <select id="m-shift-select">
               <option value="8">8 giờ/ngày (1 ca hành chính chuẩn)</option>
               <option value="10">10 giờ/ngày (Tăng ca tối nhẹ - x1.22)</option>
@@ -427,18 +446,18 @@
         </div>
 
         <div class="form-group">
-          <label for="m-weekend-mode-select">🏢 Chế Độ Làm Việc Thứ 7 & Chủ Nhật (Theo Quy Định Tòa Nhà):</label>
+          <label for="m-weekend-mode-select">Chế Độ Làm Việc Thứ 7 & Chủ Nhật (Theo Quy Định Tòa Nhà):</label>
           <select id="m-weekend-mode-select">
-            <option value="FULL_WITH_WEEKEND_BOOST">✅ Có làm cả T7 & CN (Ưu tiên dồn việc ồn/khoan đục/thang hàng vào T7-CN)</option>
-            <option value="WEEKEND_NOISY_FOCUS">🏢 Tòa nhà Văn phòng nghiêm ngặt (T2–T6 chỉ làm êm, DỒN VIỆC ỒN VÀO T7 & CN)</option>
-            <option value="SAT_WORK_SUN_OFF">🌤️ Làm Thứ 2 đến Thứ 7 — Nghỉ Chủ Nhật (Tự động cộng bù ngày CN)</option>
-            <option value="MON_FRI_ONLY">⛔ Không làm T7 & CN (Tòa nhà cấm làm cuối tuần — Tự lùi ngày kết thúc)</option>
+            <option value="FULL_WITH_WEEKEND_BOOST">Có làm cả T7 & CN (Ưu tiên dồn việc ồn/khoan đục/thang hàng vào T7-CN)</option>
+            <option value="WEEKEND_NOISY_FOCUS">Tòa nhà Văn phòng nghiêm ngặt (T2–T6 chỉ làm êm, dồn việc ồn vào T7 & CN)</option>
+            <option value="SAT_WORK_SUN_OFF">Làm Thứ 2 đến Thứ 7 — Nghỉ Chủ Nhật (Tự động cộng bù ngày CN)</option>
+            <option value="MON_FRI_ONLY">Không làm T7 & CN (Tòa nhà cấm làm cuối tuần — Tự lùi ngày kết thúc)</option>
           </select>
         </div>
 
         <div class="modal-grid-2">
           <div class="form-group">
-            <label for="m-difficulty-select">🛗 Điều Kiện Vận Chuyển Thang Máy & Mặt Bằng:</label>
+            <label for="m-difficulty-select">Điều Kiện Vận Chuyển Thang Máy & Mặt Bằng:</label>
             <select id="m-difficulty-select">
               <option value="1">Nhà phố / Tầng trệt thông thoáng (x1.0)</option>
               <option value="1.05">Chung cư (vận chuyển thang hàng theo giờ - x1.05)</option>
@@ -448,7 +467,7 @@
           </div>
 
           <div class="form-group" style="display:flex; align-items:end;">
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:9px 12px; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; color:#15803d; font-size:12.5px; font-weight:700;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:9px 12px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; color:#334155; font-size:12.5px; font-weight:700;">
               <input type="checkbox" id="m-auto-scale-crew" checked />
               Tự động co giãn số thợ/ngày theo tiến độ
             </label>
@@ -456,7 +475,7 @@
         </div>
 
         <!-- Thẻ dự tính ngày kết thúc ngay trong modal -->
-        <div id="m-calc-date-summary" style="background:#fffbeb; border:1px solid #fcd34d; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:13px; color:#78350f;">
+        <div id="m-calc-date-summary" style="background:#f8fafc; border:1px solid #cbd5e1; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:13px; color:#334155;">
           Đang tính toán...
         </div>
 
@@ -474,33 +493,33 @@
   <dialog id="modal-new-project">
     <div class="dialog-inner" style="max-width:580px;">
       <div class="dialog-header">
-        <h3>➕ Khởi Tạo Dự Án Thi Công Mới</h3>
+        <h3>Tạo Dự Án Thi Công Mới</h3>
         <button type="button" class="btn-secondary btn-sm" commandfor="modal-new-project" command="close">✕ Đóng</button>
       </div>
 
       <form id="form-new-project">
         <div class="form-group">
-          <label for="new-proj-name">📌 Tên Dự Án / Gói Thầu:</label>
+          <label for="new-proj-name">Tên Dự Án / Gói Thầu:</label>
           <input type="text" id="new-proj-name" placeholder="VD: Fitout Văn Phòng Techcombank Tầng 12 - 250m²" required />
         </div>
 
         <div class="form-group">
-          <label for="new-proj-type">🏢 Dự Án Là Ở Đâu (Loại Hình Công Trình)?</label>
+          <label for="new-proj-type">Dự Án Là Ở Đâu (Loại Hình Công Trình)?</label>
           <select id="new-proj-type">
-            <option value="OFFICE_BUILDING">🏢 Tòa Nhà Văn Phòng (Hạng A/B - Giờ giấc & tiếng ồn khắt khe)</option>
-            <option value="APARTMENT">🏠 Khu Căn Hộ Chung Cư (Nghỉ trưa 11h30-13h30 & cấm ồn Chủ Nhật)</option>
-            <option value="TOWNHOUSE">🏡 Nhà Phố / Biệt Thự (Mặt bằng riêng biệt, thi công linh hoạt)</option>
-            <option value="SHOPHOUSE_MALL">🛍️ Shophouse / Trung Tâm Thương Mại (Chỉ thi công ca đêm)</option>
+            <option value="OFFICE_BUILDING">Tòa Nhà Văn Phòng (Hạng A/B - Giờ giấc & tiếng ồn khắt khe)</option>
+            <option value="APARTMENT">Khu Căn Hộ Chung Cư (Nghỉ trưa 11h30-13h30 & cấm ồn Chủ Nhật)</option>
+            <option value="TOWNHOUSE">Nhà Phố / Biệt Thự (Mặt bằng riêng biệt, thi công linh hoạt)</option>
+            <option value="SHOPHOUSE_MALL">Shophouse / Trung Tâm Thương Mại (Chỉ thi công ca đêm)</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label for="new-proj-template">⚡ Khởi Đầu Với Kịch Bản Mẫu Nào?</label>
+          <label for="new-proj-template">Khởi Đầu Với Kịch Bản Mẫu Nào?</label>
           <select id="new-proj-template">
             <option value="quickSample">Ví dụ nhanh: 100m² Thạch cao + 200m² Sơn + 60m² Ốp lát</option>
-            <option value="office250">🏢 Fitout Văn phòng Tòa nhà 250m² (Trọn gói)</option>
-            <option value="apartment85">🏠 Nội thất Căn hộ Chung cư 2PN - 85m²</option>
-            <option value="showroom120">🛍️ Cải tạo Showroom TTTM - 120m²</option>
+            <option value="office250">Fitout Văn phòng Tòa nhà 250m² (Trọn gói)</option>
+            <option value="apartment85">Nội thất Căn hộ Chung cư 2PN - 85m²</option>
+            <option value="showroom120">Cải tạo Showroom TTTM - 120m²</option>
             <option value="">(Tạo dự án trống để tự nhập BOQ từ đầu)</option>
           </select>
         </div>

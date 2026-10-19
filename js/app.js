@@ -7,6 +7,7 @@ import {
   detectWeekendPolicyFromText,
   parseQuickTextLocal,
   analyzeWithGeminiAI,
+  generateAIConsultingReport,
   parseExcelBOQFile,
   fileToBase64
 } from './ai-parser.js';
@@ -1230,6 +1231,14 @@ function setupEventListeners() {
     handlePrintPDF();
   });
 
+  document.getElementById('btn-open-ai-consulting')?.addEventListener('click', () => {
+    loadAIConsultingReport(false);
+  });
+
+  document.getElementById('btn-refresh-ai-consult')?.addEventListener('click', () => {
+    loadAIConsultingReport(true);
+  });
+
   const apiKeyForm = document.getElementById('api-key-form');
   apiKeyForm?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -1238,6 +1247,55 @@ function setupEventListeners() {
     showToast('Đã lưu cấu hình Google Gemini API Key!');
     document.getElementById('settings-dialog')?.close();
   });
+}
+
+let cachedAIConsultReport = null;
+
+async function loadAIConsultingReport(forceRefresh = false) {
+  const contentBox = document.getElementById('ai-consulting-content');
+  const loadingIndicator = document.getElementById('ai-consulting-loading');
+  if (!contentBox) return;
+
+  const calc = window.__latestCalcResult || calculateProjectManpower();
+  const projTypeInfo = PROJECT_TYPES[state.projectType] || PROJECT_TYPES.OFFICE_BUILDING;
+
+  if (cachedAIConsultReport && !forceRefresh) {
+    contentBox.innerHTML = formatMarkdownToHTML(cachedAIConsultReport);
+    return;
+  }
+
+  if (loadingIndicator) loadingIndicator.style.display = 'flex';
+  contentBox.style.display = 'none';
+
+  try {
+    const rawReport = await generateAIConsultingReport(calc, {
+      title: state.projectTitle,
+      projectTypeName: projTypeInfo.name
+    });
+    cachedAIConsultReport = rawReport;
+    contentBox.innerHTML = formatMarkdownToHTML(rawReport);
+  } catch (err) {
+    console.error('Lỗi sinh báo cáo AI:', err);
+    contentBox.innerHTML = `<div style="color:#b91c1c; font-weight:700;">Không thể tạo báo cáo AI: ${err.message}</div>`;
+  } finally {
+    if (loadingIndicator) loadingIndicator.style.display = 'none';
+    contentBox.style.display = 'block';
+  }
+}
+
+function formatMarkdownToHTML(mdText = '') {
+  let html = mdText
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^# (.*$)/gim, '<h3>$1</h3>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^- (.*$)/gim, '<li>$1</li>')
+    .replace(/^\d+\.\s+(.*$)/gim, '<li>$1</li>');
+
+  html = html.replace(/(<li>.*?<\/li>(\s*<li>.*?<\/li>)*)/gis, '<ul>$1</ul>');
+  html = html.replace(/\n\n+/g, '<br/><br/>');
+  return html;
 }
 
 async function triggerGeminiTextAnalysis(text) {
