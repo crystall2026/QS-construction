@@ -1,7 +1,6 @@
 // Bộ xử lý bóc tách BOQ thông minh (Hybrid: Rule-based tốc độ cao + Google Gemini AI)
-import { LABOR_NORMS, TRADES } from './norms-data.js';
+import { LABOR_NORMS, TRADES, WEEKEND_TAGS } from './norms-data.js';
 
-// Lưu trữ key mặc định dưới dạng mảnh ghép runtime để tránh GitHub Secret Scanner thu hồi key khi push public repo
 const DEFAULT_KEY_PARTS = [
   'AQ.Ab8RN6JlRtJM',
   'TNhFUGkdafGs5El',
@@ -25,7 +24,6 @@ export function setCustomApiKey(key) {
   }
 }
 
-// Bỏ dấu tiếng Việt để so khớp từ khóa chính xác hơn
 function normalizeText(str = '') {
   return String(str)
     .toLowerCase()
@@ -37,7 +35,49 @@ function normalizeText(str = '') {
     .trim();
 }
 
-// Tìm định mức phù hợp nhất cho tên công việc
+// Tự động phát hiện chế độ làm việc Thứ 7 - Chủ Nhật từ câu mô tả của khách/Sếp
+export function detectWeekendPolicyFromText(inputText = '') {
+  const norm = normalizeText(inputText);
+  if (!norm) return null;
+
+  if (
+    norm.includes('nghi thu 7') ||
+    norm.includes('nghi t7') ||
+    norm.includes('khong lam thu 7') ||
+    norm.includes('khong lam cuoi tuan') ||
+    norm.includes('cam thi cong t7')
+  ) {
+    return 'MON_FRI_ONLY';
+  }
+  if (
+    norm.includes('nghi chu nhat') ||
+    norm.includes('nghi cn') ||
+    norm.includes('khong lam chu nhat') ||
+    norm.includes('lam thu 7 nghi cn')
+  ) {
+    return 'SAT_WORK_SUN_OFF';
+  }
+  if (
+    norm.includes('on vao t7') ||
+    norm.includes('khoan duc cuoi tuan') ||
+    norm.includes('toa nha van phong') ||
+    norm.includes('tranh thu t7')
+  ) {
+    return 'WEEKEND_NOISY_FOCUS';
+  }
+  if (
+    norm.includes('lam ca thu 7') ||
+    norm.includes('lam ca cn') ||
+    norm.includes('lam xuyen suot') ||
+    norm.includes('lam 7 ngay') ||
+    norm.includes('t7 cn')
+  ) {
+    return 'FULL_WITH_WEEKEND_BOOST';
+  }
+  return null;
+}
+
+// Tìm định mức & nhãn lưu ý Thứ 7 - Chủ nhật phù hợp nhất cho tên công việc
 export function matchLaborNorm(taskName, unitHint = '') {
   const rawLower = String(taskName || '').toLowerCase();
   const normTask = normalizeText(taskName);
@@ -57,7 +97,6 @@ export function matchLaborNorm(taskName, unitHint = '') {
       }
     }
 
-    // Thưởng điểm nếu trùng đơn vị tính
     if (normUnit && normalizeText(norm.unit) === normUnit) {
       score += 4;
     }
@@ -75,6 +114,7 @@ export function matchLaborNorm(taskName, unitHint = '') {
       unit: unitHint || bestNorm.unit,
       productivityPerManDay: bestNorm.productivityPerManDay,
       crewSize: bestNorm.defaultCrewSize,
+      weekendTag: bestNorm.weekendTag || 'QUIET_WEEKDAY',
       matchedNormName: bestNorm.name
     };
   }
@@ -89,75 +129,84 @@ export function matchLaborNorm(taskName, unitHint = '') {
       unit: unitHint || 'm2',
       productivityPerManDay: fallback.productivityPerManDay,
       crewSize: 2,
+      weekendTag: 'HIGH_NOISE_WEEKEND',
       matchedNormName: fallback.name
     };
   }
   if (normTask.includes('son') || normTask.includes('ba matit') || normTask.includes('dulux') || normTask.includes('jotun')) {
+    const isSmelly = normTask.includes('pu') || normTask.includes('dau') || normTask.includes('hieu ung');
     return {
-      code: 'PNT-01',
+      code: isSmelly ? 'PNT-04' : 'PNT-01',
       trade: 'PAINT',
       unit: unitHint || 'm2',
-      productivityPerManDay: 18.0,
+      productivityPerManDay: isSmelly ? 8.5 : 18.0,
       crewSize: 2,
+      weekendTag: isSmelly ? 'LIFT_SMELL_WEEKEND' : 'QUIET_WEEKDAY',
       matchedNormName: 'Sơn nước & bả matit'
     };
   }
   if (normTask.includes('gach') || normTask.includes('op') || normTask.includes('lat') || normTask.includes('xay') || normTask.includes('to') || normTask.includes('chong tham')) {
+    const isTileCut = normTask.includes('gach') || normTask.includes('op') || normTask.includes('lat') || normTask.includes('da');
     return {
       code: 'MAS-06',
       trade: 'MASON',
       unit: unitHint || 'm2',
       productivityPerManDay: 7.5,
       crewSize: 2,
+      weekendTag: isTileCut ? 'HIGH_NOISE_WEEKEND' : 'LIFT_SMELL_WEEKEND',
       matchedNormName: 'Ốp lát / Xây tô hoàn thiện'
     };
   }
   if (normTask.includes('dien') || normTask.includes('den') || normTask.includes('day') || normTask.includes('o cam') || normTask.includes('nuoc') || normTask.includes('dieu hoa') || normTask.includes('mep')) {
+    const isNoisyMEP = normTask.includes('cat') || normTask.includes('duc') || normTask.includes('ong dong') || normTask.includes('tu dien') || normTask.includes('he thong');
     return {
-      code: 'MEP-03',
+      code: isNoisyMEP ? 'MEP-01' : 'MEP-03',
       trade: 'MEP',
       unit: unitHint || 'bộ',
       productivityPerManDay: 12.0,
       crewSize: 2,
+      weekendTag: isNoisyMEP ? 'HIGH_NOISE_WEEKEND' : 'QUIET_WEEKDAY',
       matchedNormName: 'Thi công lắp đặt MEP'
     };
   }
   if (normTask.includes('san go') || normTask.includes('vinyl') || normTask.includes('spc') || normTask.includes('tham')) {
+    const isGlueFloor = normTask.includes('vinyl') || normTask.includes('tham') || normTask.includes('dan');
     return {
       code: 'FLR-01',
       trade: 'FLOOR',
       unit: unitHint || 'm2',
       productivityPerManDay: 25.0,
       crewSize: 2,
+      weekendTag: isGlueFloor ? 'LIFT_SMELL_WEEKEND' : 'QUIET_WEEKDAY',
       matchedNormName: 'Thi công sàn gỗ / thảm'
     };
   }
   if (normTask.includes('thao do') || normTask.includes('dap') || normTask.includes('ve sinh') || normTask.includes('xa ban')) {
+    const isClean = normTask.includes('ve sinh');
     return {
-      code: 'DEMO-01',
+      code: isClean ? 'FUR-07' : 'DEMO-01',
       trade: 'DEMO',
       unit: unitHint || 'm2',
       productivityPerManDay: 25.0,
       crewSize: 2,
+      weekendTag: isClean ? 'QUIET_WEEKDAY' : 'HIGH_NOISE_WEEKEND',
       matchedNormName: 'Tháo dỡ / Vệ sinh công nghiệp'
     };
   }
 
-  // Mặc định rơi vào Tổ Nội thất / Fitout chung
   return {
     code: 'FUR-03',
     trade: 'FURNITURE',
     unit: unitHint || 'm2',
     productivityPerManDay: 5.5,
     crewSize: 2,
+    weekendTag: 'LIFT_SMELL_WEEKEND',
     matchedNormName: 'Thi công lắp đặt nội thất Fitout'
   };
 }
 
-// Bóc tách câu nhập nhanh bằng Regex thông minh (chạy tức thì 0ms, dùng trước hoặc khi không gọi AI)
 export function parseQuickTextLocal(inputText) {
   if (!inputText || !inputText.trim()) return [];
-  // Tách theo dấu phẩy, chấm phẩy, xuống dòng hoặc từ "và", "+"
   const segments = inputText
     .split(/[\n,;+]+|\s+và\s+/i)
     .map(s => s.trim())
@@ -165,7 +214,12 @@ export function parseQuickTextLocal(inputText) {
 
   const results = [];
   for (const seg of segments) {
-    // Tìm con số và đơn vị đi kèm (VD: "100m2 tường thạch cao", "sơn nước 250 m2", "15 bộ đèn")
+    // Bỏ qua cụm chỉ nói về số ngày hoặc thứ 7 chủ nhật
+    const normSeg = normalizeText(seg);
+    if (normSeg.includes('thu 7') || normSeg.includes('chu nhat') || /^\d+\s*ngay$/i.test(normSeg)) {
+      continue;
+    }
+
     const qtyMatch = seg.match(/(\d+(?:[.,]\d+)?)\s*(m2|m²|md|m\b|bộ|bo|cái|cai|tủ|tu|phòng|phong|điểm|diem|gói|goi)?/i);
     if (!qtyMatch) continue;
 
@@ -173,12 +227,10 @@ export function parseQuickTextLocal(inputText) {
     if (isNaN(quantity) || quantity <= 0) continue;
 
     let rawUnit = (qtyMatch[2] || '').replace('m²', 'm2').toLowerCase();
-    // Làm sạch tên công việc
     let cleanName = seg.replace(qtyMatch[0], ' ').replace(/\s+/g, ' ').trim();
     if (cleanName.length < 2) cleanName = seg;
 
     const matched = matchLaborNorm(cleanName, rawUnit);
-    // Viết hoa chữ cái đầu
     const formattedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 
     results.push({
@@ -188,43 +240,50 @@ export function parseQuickTextLocal(inputText) {
       unit: rawUnit || matched.unit,
       quantity,
       productivityPerManDay: matched.productivityPerManDay,
-      crewSize: matched.crewSize
+      crewSize: matched.crewSize,
+      weekendTag: matched.weekendTag
     });
   }
   return results;
 }
 
-// Gọi Google Gemini API để phân tích BOQ hoặc yêu cầu ngôn ngữ tự nhiên phức tạp
 export async function analyzeWithGeminiAI({ textContent, pdfBase64 = null }) {
   const apiKey = getActiveApiKey();
   const normsSummary = LABOR_NORMS.map(n =>
-    `${n.code} | ${n.name} | trade:${n.trade} | unit:${n.unit} | năng_suất:${n.productivityPerManDay}/công | tổ:${n.defaultCrewSize} người`
+    `${n.code} | ${n.name} | trade:${n.trade} | unit:${n.unit} | năng_suất:${n.productivityPerManDay}/công | weekendTag:${n.weekendTag}`
   ).join('\n');
 
-  const systemInstruction = `Bạn là Kỹ sư QS Trưởng (Quantity Surveyor) chuyên nghiệp của Crystal Interior (qs.crystal-interior.com), chuyên lập dự toán nhân công và điều phối thợ cho dự án thi công nội thất, fitout, điện nước MEP, trần vách thạch cao, sơn nước, ốp lát, sàn gỗ.
+  const systemInstruction = `Bạn là Kỹ sư QS Trưởng (Quantity Surveyor) chuyên nghiệp của Crystal Interior (qs.crystal-interior.com), chuyên lập dự toán nhân công và điều phối thợ cho dự án thi công nội thất, fitout bên trong tòa nhà văn phòng, chung cư, showroom.
 
 Danh mục Tổ đội hợp lệ (trade):
-- DEMO: Tổ Tháo dỡ & Chuẩn bị / Vệ sinh
+- DEMO: Tổ Tháo dỡ & Vận chuyển Xà bần
 - MASON: Tổ Xây tô - Ốp lát - Chống thấm
 - GYPSUM: Tổ Trần & Vách Thạch Cao
 - MEP: Tổ Điện - Nước - Điều hòa (MEP)
 - PAINT: Tổ Sơn Nước & Bả Matit
 - FLOOR: Tổ Sàn Gỗ - Vinyl - Thảm
-- FURNITURE: Tổ Mộc & Lắp Đặt Nội Thất
+- FURNITURE: Tổ Mộc & Lắp Đặt Nội Thất Fitout
 
-Danh mục Định mức Năng suất Chuẩn (Khối lượng hoàn thành trên 1 công 8h):
+Danh mục Phân loại Lưu ý Thứ 7 - Chủ Nhật trong Tòa nhà (weekendTag):
+- HIGH_NOISE_WEEKEND: Việc gây ồn/rung/bụi lớn (đập phá, tháo dỡ, khoan bê tông bắn ty trần thạch cao, cắt đục rãnh điện nước, cắt gạch đá, khoan bắt vách gỗ). Bắt buộc/Ưu tiên tranh thủ làm Thứ 7 & Chủ Nhật.
+- LIFT_SMELL_WEEKEND: Việc cần đăng ký thang tải (Service Lift) vận chuyển vật tư lớn (tủ gỗ, vách kính, xà bần, cát xi) hoặc có mùi keo/sơn PU/chống thấm cần bay mùi cuối tuần.
+- QUIET_WEEKDAY: Việc thi công êm bên trong mặt bằng (bả bột, lăn sơn nước, kéo dây điện, lắp đèn, ghép sàn gỗ, lắp ráp module tủ/bàn ghế). Làm T2-T6 bình thường.
+
+Danh mục Chế độ làm việc cuối tuần (weekendMode):
+- FULL_WITH_WEEKEND_BOOST: Làm cả T7 & CN (ưu tiên dồn việc ồn/khoan cắt/thang hàng vào T7-CN)
+- SAT_WORK_SUN_OFF: Làm Thứ 2 đến Thứ 7, nghỉ Chủ Nhật
+- MON_FRI_ONLY: Chỉ làm Thứ 2 đến Thứ 6, nghỉ Thứ 7 & Chủ Nhật
+- WEEKEND_NOISY_FOCUS: Tòa nhà văn phòng nghiêm ngặt (T2-T6 chỉ làm việc êm, toàn bộ việc ồn/khoan cắt dồn vào T7-CN)
+
+Danh mục Định mức Năng suất Chuẩn:
 ${normsSummary}
 
-NHIỆM VỤ:
-Dựa vào nội dung bảng BOQ hoặc mô tả khối lượng công việc người dùng cung cấp:
-1. Trích xuất toàn bộ các hạng mục công việc thi công thực tế (bỏ qua dòng tiêu đề nhóm, dòng tổng cộng, thuế VAT).
-2. Ánh xạ mỗi công việc vào đúng mã "code", "trade", "unit", "productivityPerManDay" (khối lượng 1 thợ làm trong 1 ngày) và "crewSize" (số thợ bố trí hợp lý mỗi ngày cho việc đó, thường từ 2 đến 5 người).
-3. Nếu người dùng mô tả tổng quát (ví dụ: "thi công 100m2 tường thạch cao có sơn nước 2 mặt"), hãy tách hoặc liệt kê rõ cả hạng mục đóng vách thạch cao VÀ hạng mục sơn bả để sếp không bị sót nhân công.
-4. Trả về DUY NHẤT một JSON object hợp lệ theo cấu trúc sau (không kèm markdown thừa):
+Trả về DUY NHẤT một JSON object hợp lệ:
 {
-  "projectTitle": "Tên dự án gợi ý ngắn gọn",
+  "projectTitle": "Tên dự án gợi ý",
   "recommendedTargetDays": 15,
-  "executiveNote": "Nhận xét ngắn gọn 1-2 câu của QS Trưởng cho Sếp về trọng tâm nhân công dự án này",
+  "weekendMode": "FULL_WITH_WEEKEND_BOOST",
+  "executiveNote": "Nhận xét của QS Trưởng cho Sếp về số thợ và lưu ý các việc cần tranh thủ làm Thứ 7 - Chủ Nhật trong tòa nhà",
   "items": [
     {
       "code": "GYP-02",
@@ -233,7 +292,8 @@ Dựa vào nội dung bảng BOQ hoặc mô tả khối lượng công việc ng
       "unit": "m2",
       "quantity": 100,
       "productivityPerManDay": 9.0,
-      "crewSize": 3
+      "crewSize": 3,
+      "weekendTag": "HIGH_NOISE_WEEKEND"
     }
   ]
 }`;
@@ -248,7 +308,7 @@ Dựa vào nội dung bảng BOQ hoặc mô tả khối lượng công việc ng
     });
   }
   parts.push({
-    text: textContent || 'Hãy bóc tách bảng khối lượng BOQ từ tài liệu đính kèm và tính định mức nhân công.'
+    text: textContent || 'Hãy bóc tách bảng khối lượng BOQ từ tài liệu đính kèm và phân loại lịch làm việc Thứ 7 - Chủ Nhật trong tòa nhà.'
   });
 
   const modelsToTry = ['models/gemini-flash-latest', 'models/gemini-3.8-flash', 'models/gemini-3.5-flash'];
@@ -278,25 +338,24 @@ Dựa vào nội dung bảng BOQ hoặc mô tả khối lượng công việc ng
 
       const data = await response.json();
       const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      if (!rawText) {
-        lastError = new Error('AI không trả về dữ liệu văn bản.');
-        continue;
-      }
+      if (!rawText) continue;
 
       const cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
       const parsed = JSON.parse(cleaned);
       if (parsed && Array.isArray(parsed.items)) {
-        // Chuẩn hóa dữ liệu đầu ra
-        parsed.items = parsed.items
-          .map(it => ({
-            code: it.code || 'CUSTOM',
+        parsed.items = parsed.items.map(it => {
+          const fallbackMatch = matchLaborNorm(it.name, it.unit);
+          return {
+            code: it.code || fallbackMatch.code,
             name: String(it.name || 'Hạng mục thi công').trim(),
-            trade: TRADES[it.trade] ? it.trade : matchLaborNorm(it.name, it.unit).trade,
-            unit: String(it.unit || 'm2').trim(),
+            trade: TRADES[it.trade] ? it.trade : fallbackMatch.trade,
+            unit: String(it.unit || fallbackMatch.unit || 'm2').trim(),
             quantity: Math.max(0.1, parseFloat(it.quantity) || 1),
-            productivityPerManDay: Math.max(0.1, parseFloat(it.productivityPerManDay) || 10),
-            crewSize: Math.max(1, Math.round(parseFloat(it.crewSize) || 2))
-          }));
+            productivityPerManDay: Math.max(0.1, parseFloat(it.productivityPerManDay) || fallbackMatch.productivityPerManDay),
+            crewSize: Math.max(1, Math.round(parseFloat(it.crewSize) || 2)),
+            weekendTag: WEEKEND_TAGS[it.weekendTag] ? it.weekendTag : fallbackMatch.weekendTag
+          };
+        });
         return parsed;
       }
     } catch (err) {
@@ -307,7 +366,6 @@ Dựa vào nội dung bảng BOQ hoặc mô tả khối lượng công việc ng
   throw lastError || new Error('Không thể kết nối tới Google Gemini API.');
 }
 
-// Đọc file Excel (.xlsx, .xls, .csv) từ trình duyệt bằng thư viện SheetJS (XLSX)
 export async function parseExcelBOQFile(file) {
   const arrayBuffer = await file.arrayBuffer();
   const workbook = window.XLSX.read(arrayBuffer, { type: 'array' });
@@ -333,7 +391,6 @@ export async function parseExcelBOQFile(file) {
         rawTextLines.push(joinedLine);
       }
 
-      // Nhận diện dòng Header của bảng BOQ
       const normRow = row.map(c => normalizeText(c));
       const foundDesc = normRow.findIndex(c =>
         c.includes('noi dung') || c.includes('hang muc') || c.includes('ten cong viec') ||
@@ -353,7 +410,6 @@ export async function parseExcelBOQFile(file) {
         continue;
       }
 
-      // Nếu đã xác định cột hoặc tự động dò dòng có (Chữ mô tả dài + Đơn vị + Số khối lượng)
       let name = '';
       let unit = '';
       let qty = NaN;
@@ -364,16 +420,13 @@ export async function parseExcelBOQFile(file) {
         const rawQty = String(row[qtyCol] || '').replace(/,/g, '');
         qty = parseFloat(rawQty);
       } else {
-        // Tự động dò cột trên dòng bất kỳ
         const textCandidates = row.filter(c => c.length >= 5 && isNaN(Number(c.replace(/,/g, ''))));
         if (textCandidates.length > 0) {
-          // Chọn ô chữ dài nhất làm tên hạng mục
           name = textCandidates.reduce((a, b) => (b.length > a.length ? b : a), textCandidates[0]);
         }
         const unitMatch = row.find(c => /^(m2|m²|m3|md|m|bộ|bo|cái|cai|tủ|phòng|điểm|công|lô|gói|kg|tấn)$/i.test(c));
         if (unitMatch) unit = unitMatch;
 
-        // Tìm con số hợp lý làm khối lượng (bỏ qua cột STT nhỏ ở đầu dòng và cột đơn giá hàng trăm nghìn/triệu ở cuối dòng)
         for (let c = 1; c < row.length; c++) {
           const val = parseFloat(String(row[c]).replace(/,/g, ''));
           if (!isNaN(val) && val > 0 && val < 50000) {
@@ -400,7 +453,8 @@ export async function parseExcelBOQFile(file) {
           unit: unit || matched.unit,
           quantity: qty,
           productivityPerManDay: matched.productivityPerManDay,
-          crewSize: matched.crewSize
+          crewSize: matched.crewSize,
+          weekendTag: matched.weekendTag
         });
       }
     }
@@ -412,7 +466,6 @@ export async function parseExcelBOQFile(file) {
   };
 }
 
-// Đọc file PDF thành chuỗi Base64 để gửi trực tiếp cho Gemini Multimodal hoặc trích xuất text
 export function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

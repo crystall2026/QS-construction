@@ -1,23 +1,23 @@
 :root {
-  --bg-page: #f4f7fb;
+  --bg-page: #eef2f6;
   --bg-card: #ffffff;
   --bg-subtle: #f8fafc;
   --text-main: #0f172a;
-  --text-secondary: #475569;
+  --text-secondary: #334155;
   --text-muted: #64748b;
-  --border-color: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --border-color: #cbd5e1;
+  --border-strong: #94a3b8;
   --brand-primary: #0f4c81;
   --brand-secondary: #0284c7;
   --brand-accent: #f59e0b;
   --brand-dark: #092c4c;
   --success: #16a34a;
   --danger: #d93025;
-  --radius-lg: 14px;
+  --radius-lg: 16px;
   --radius-md: 10px;
   --radius-sm: 6px;
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.07);
+  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 6px 20px rgba(15, 23, 42, 0.09);
 }
 
 *, *::before, *::after {
@@ -35,17 +35,17 @@ body {
 
 /* Header & Executive Topbar */
 .app-header {
-  background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-primary) 65%, #0369a1 100%);
+  background: linear-gradient(135deg, #071f36 0%, #0f4c81 60%, #0369a1 100%);
   color: #ffffff;
   padding: 16px 24px;
-  box-shadow: 0 4px 14px rgba(9, 44, 76, 0.18);
+  box-shadow: 0 4px 16px rgba(7, 31, 54, 0.25);
   position: sticky;
   top: 0;
   z-index: 40;
 }
 
 .header-inner {
-  max-width: 1440px;
+  max-width: 1480px;
   margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
@@ -61,23 +61,22 @@ body {
 }
 
 .brand-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.18);
+  border: 2px solid #38bdf8;
   display: grid;
   place-items: center;
   font-weight: 800;
   font-size: 18px;
-  letter-spacing: -0.5px;
-  color: #38bdf8;
+  color: #7dd3fc;
 }
 
 .brand-title {
   margin: 0;
   font-size: 19px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.2px;
 }
 
@@ -96,48 +95,121 @@ body {
 
 /* Main Container */
 .main-container {
-  max-width: 1440px;
-  margin: 22px auto 60px;
+  max-width: 1480px;
+  margin: 24px auto 64px;
   padding: 0 20px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 28px;
 }
 
-/* Cards */
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
+/* ==========================================================================
+   PHÂN ĐỊNH KHU VỰC KHỐI MÀU RÕ RÀNG GIỮA CÁC BẢNG (COLOR-CODED ZONE BLOCKS)
+   ========================================================================== */
+.zone-block {
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 20px 22px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 2px solid transparent;
 }
 
-.card-header {
+.zone-banner {
+  padding: 14px 22px;
+  color: #ffffff;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-color);
 }
 
-.card-title-group h2 {
-  margin: 0;
-  font-size: 16.5px;
-  font-weight: 700;
-  color: var(--brand-dark);
+.zone-banner-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.card-title-group p {
-  margin: 3px 0 0;
+.zone-step-badge {
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.zone-banner h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.zone-banner p {
+  margin: 2px 0 0;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.zone-body {
+  padding: 20px 22px;
+}
+
+/* Khối 1: Xanh Dương Sky (Nhập liệu & BOQ) */
+.zone-sky {
+  background: #f0f9ff;
+  border-color: #0284c7;
+}
+.zone-sky .zone-banner {
+  background: linear-gradient(90deg, #0369a1 0%, #0284c7 100%);
+}
+
+/* Khối 2: Cam Hổ Phách Amber (Lịch Bắt Đầu - Kết Thúc & Lưu Ý Thứ 7 - CN Tòa Nhà) */
+.zone-amber {
+  background: #fffbeb;
+  border-color: #d97706;
+}
+.zone-amber .zone-banner {
+  background: linear-gradient(90deg, #b45309 0%, #d97706 100%);
+}
+
+/* Khối 3: Xanh Ngọc Lục Bảo Emerald (Bảng 1: Tổng Hợp Phân Bổ Thợ Theo Tổ Đội) */
+.zone-emerald {
+  background: #ecfdf5;
+  border-color: #059669;
+}
+.zone-emerald .zone-banner {
+  background: linear-gradient(90deg, #047857 0%, #059669 100%);
+}
+
+/* Khối 4: Tím Indigo (Bảng 2: Lịch Điều Phối Thợ Theo Ngày Có T7 & CN) */
+.zone-indigo {
+  background: #eef2ff;
+  border-color: #4f46e5;
+}
+.zone-indigo .zone-banner {
+  background: linear-gradient(90deg, #3730a3 0%, #4f46e5 100%);
+}
+
+/* Khối 5: Xanh Cổ Vịt Teal (Bảng 3: Chi Tiết Khối Lượng BOQ Từng Hạng Mục) */
+.zone-teal {
+  background: #f0fdfa;
+  border-color: #0d9488;
+}
+.zone-teal .zone-banner {
+  background: linear-gradient(90deg, #0f766e 0%, #0d9488 100%);
+}
+
+/* Inner White Box inside colored zones */
+.inner-white-box {
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Buttons */
@@ -192,13 +264,13 @@ button {
 }
 
 .btn-header {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
 .btn-header:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.24);
 }
 
 .btn-header-gold {
@@ -213,7 +285,7 @@ button {
 }
 
 .btn-sm {
-  padding: 6px 11px;
+  padding: 6px 12px;
   font-size: 12.5px;
 }
 
@@ -223,24 +295,25 @@ button {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  padding: 10px 14px;
+  background: #1e293b;
+  color: #ffffff;
+  padding: 12px 18px;
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .template-label {
   font-weight: 700;
-  color: var(--brand-primary);
-  font-size: 13px;
-  margin-right: 4px;
+  color: #38bdf8;
+  font-size: 13.5px;
+  margin-right: 6px;
 }
 
 .tpl-chip {
-  background: #ffffff;
-  border: 1px solid #93c5fd;
-  color: #1e3a8a;
-  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #f8fafc;
+  padding: 6px 13px;
   border-radius: 999px;
   font-size: 12.5px;
   font-weight: 600;
@@ -248,12 +321,12 @@ button {
 }
 
 .tpl-chip:hover {
-  background: var(--brand-primary);
-  color: #ffffff;
-  border-color: var(--brand-primary);
+  background: #38bdf8;
+  color: #0f172a;
+  border-color: #38bdf8;
 }
 
-/* Input Hub Grid (Quick Volume + BOQ Upload + AI Natural Language) */
+/* Input Hub Grid */
 .input-hub-grid {
   display: grid;
   grid-template-columns: 1.35fr 1fr;
@@ -274,8 +347,8 @@ button {
 }
 
 .quick-field-item {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-color);
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
   border-radius: var(--radius-sm);
   padding: 9px 11px;
 }
@@ -283,7 +356,7 @@ button {
 .quick-field-item label {
   display: block;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-secondary);
   margin-bottom: 5px;
 }
@@ -305,7 +378,7 @@ button {
 }
 
 .unit-tag {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
@@ -317,29 +390,29 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding-top: 8px;
+  padding-top: 10px;
   border-top: 1px dashed var(--border-color);
 }
 
 /* Dropzone for Excel & PDF */
 .boq-dropzone {
-  border: 2px dashed #60a5fa;
+  border: 2px dashed #0284c7;
   background: #f0f9ff;
   border-radius: var(--radius-md);
-  padding: 18px;
+  padding: 16px;
   text-align: center;
   transition: all 0.2s;
   margin-bottom: 14px;
 }
 
 .boq-dropzone.drag-active {
-  background: #dbeafe;
+  background: #bae6fd;
   border-color: var(--brand-primary);
   transform: scale(1.01);
 }
 
 .dropzone-icon {
-  font-size: 28px;
+  font-size: 26px;
   margin-bottom: 4px;
 }
 
@@ -353,7 +426,7 @@ button {
 .dropzone-sub {
   font-size: 12px;
   color: var(--text-secondary);
-  margin: 0 0 12px;
+  margin: 0 0 10px;
 }
 
 .file-btn-row {
@@ -388,28 +461,24 @@ input:required:user-valid {
   border-width: 2px;
 }
 
-/* Project Parameters Control Strip */
-.params-strip {
+/* ==========================================================================
+   KHỐI 2: BẢNG LỊCH NGÀY BẮT ĐẦU - KẾT THÚC & LƯU Ý THỨ 7 - CHỦ NHẬT TÒA NHÀ
+   ========================================================================== */
+.calendar-control-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1.2fr 1.1fr 1.2fr;
+  grid-template-columns: 1.5fr 1fr 1fr 1.6fr;
   gap: 14px;
-  align-items: end;
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-left: 5px solid var(--brand-primary);
-  border-radius: var(--radius-md);
-  padding: 16px 20px;
-  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
 }
 
 @media (max-width: 1024px) {
-  .params-strip {
+  .calendar-control-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 640px) {
-  .params-strip {
+  .calendar-control-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -418,37 +487,131 @@ input:required:user-valid {
   display: block;
   font-size: 12px;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: #78350f;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.25px;
   margin-bottom: 6px;
 }
 
 .param-box input[type="text"],
 .param-box input[type="number"],
+.param-box input[type="date"],
 .param-box select {
   width: 100%;
-  padding: 8px 11px;
-  border: 1px solid var(--border-strong);
+  padding: 9px 11px;
+  border: 1.5px solid #fcd34d;
   border-radius: var(--radius-sm);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-main);
   background: #ffffff;
 }
 
-.checkbox-label {
-  display: flex !important;
+.param-box input:focus,
+.param-box select:focus {
+  outline: none;
+  border-color: #d97706;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18);
+}
+
+/* Thẻ Kết Quả Tự Động Tính Ngày Bắt Đầu -> Ngày Kết Thúc */
+.auto-date-summary-bar {
+  background: linear-gradient(90deg, #78350f 0%, #92400e 100%);
+  color: #ffffff;
+  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  font-size: 13px !important;
-  text-transform: none !important;
-  cursor: pointer;
-  padding: 8px 10px;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.date-milestone {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-milestone-label {
+  font-size: 12px;
+  color: #fde68a;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.date-milestone-val {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.date-milestone-end {
+  background: #f59e0b;
+  color: #0f172a;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 16px;
+}
+
+/* 3 Cột Lưu Ý Việc Cần Tranh Thủ Thứ 7 - CN Trong Tòa Nhà */
+.building-fitout-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 1024px) {
+  .building-fitout-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fitout-rule-card {
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  border: 2px solid transparent;
+}
+
+.fitout-rule-card h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fitout-rule-card p {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+}
+
+.fitout-rule-card ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.rule-noisy {
+  background: #fef2f2;
+  border-color: #f87171;
+  color: #7f1d1d;
+}
+
+.rule-lift {
+  background: #fff7ed;
+  border-color: #fb923c;
+  color: #7c2d12;
+}
+
+.rule-quiet {
   background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: var(--radius-sm);
-  color: #166534 !important;
+  border-color: #4ade80;
+  color: #14532d;
 }
 
 /* Executive KPI Grid */
@@ -472,38 +635,29 @@ input:required:user-valid {
 
 .kpi-card {
   background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 18px 20px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
 }
 
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-}
-
-.kpi-card.kpi-blue::before { background: #0284c7; }
-.kpi-card.kpi-amber::before { background: #f59e0b; }
-.kpi-card.kpi-emerald::before { background: #10b981; }
-.kpi-card.kpi-purple::before { background: #7c3aed; }
+.kpi-card.kpi-blue { border-color: #38bdf8; background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 60%); }
+.kpi-card.kpi-amber { border-color: #fbbf24; background: linear-gradient(180deg, #fffbeb 0%, #ffffff 60%); }
+.kpi-card.kpi-emerald { border-color: #34d399; background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 60%); }
+.kpi-card.kpi-purple { border-color: #a78bfa; background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 60%); }
 
 .kpi-label {
-  font-size: 12.5px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .kpi-value {
-  font-size: 26px;
+  font-size: 25px;
   font-weight: 800;
   color: var(--text-main);
   margin: 6px 0 4px;
@@ -517,9 +671,9 @@ input:required:user-valid {
 
 .status-pill {
   display: inline-block;
-  padding: 3px 9px;
+  padding: 4px 10px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   margin-top: 4px;
 }
@@ -534,26 +688,13 @@ input:required:user-valid {
   color: #b45309;
 }
 
-/* Executive Note Banner */
-.exec-note-banner {
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  border-radius: var(--radius-md);
-  padding: 11px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 13.5px;
-  color: #92400e;
-}
-
 /* Data Tables */
 .table-responsive {
   width: 100%;
   overflow-x: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
+  background: #ffffff;
 }
 
 .qs-table {
@@ -566,22 +707,26 @@ input:required:user-valid {
 .qs-table th,
 .qs-table td {
   padding: 11px 12px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #e2e8f0;
   vertical-align: middle;
 }
 
 .qs-table thead th {
-  background: #f1f5f9;
-  color: #1e293b;
+  background: #1e293b;
+  color: #ffffff;
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.25px;
+  letter-spacing: 0.3px;
   white-space: nowrap;
 }
 
-.qs-table tbody tr:hover {
+.qs-table tbody tr:nth-child(even) {
   background-color: #f8fafc;
+}
+
+.qs-table tbody tr:hover {
+  background-color: #eff6ff;
 }
 
 .text-center { text-align: center; }
@@ -590,7 +735,7 @@ input:required:user-valid {
 .font-bold { font-weight: 700; }
 
 .highlight-col {
-  background: rgba(14, 165, 233, 0.05);
+  background: rgba(16, 185, 129, 0.08);
 }
 
 .highlight-mandays {
@@ -615,6 +760,34 @@ input:required:user-valid {
   margin-top: 3px;
 }
 
+.weekend-strategy-note {
+  font-size: 12.5px;
+  color: #334155;
+  line-height: 1.45;
+}
+
+.wk-fire-badge {
+  display: inline-block;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.wk-calm-badge {
+  display: inline-block;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 .manday-strong {
   font-weight: 800;
   font-size: 15px;
@@ -637,11 +810,12 @@ input:required:user-valid {
 
 .phase-tag {
   display: inline-block;
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
   padding: 3px 8px;
   border-radius: 5px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 12.5px;
 }
 
@@ -662,14 +836,14 @@ input:required:user-valid {
 }
 
 .summary-footer-row td {
-  background: #f8fafc;
-  border-top: 2px solid var(--brand-primary);
-  font-size: 14px;
+  background: #0f172a !important;
+  color: #ffffff !important;
+  font-size: 13.5px;
   padding: 13px 12px;
 }
 
 .cost-total-highlight {
-  color: #0f4c81;
+  color: #fbbf24 !important;
   font-size: 15.5px;
 }
 
@@ -724,7 +898,7 @@ input:required:user-valid {
 }
 
 .item-unit-input {
-  width: 64px;
+  width: 60px;
 }
 
 .days-pill {
@@ -751,10 +925,12 @@ input:required:user-valid {
   color: #dc2626;
 }
 
-/* Daily Schedule Gantt Matrix */
+/* ==========================================================================
+   BẢNG 2: MA TRẬN LỊCH ĐIỀU PHỐI THỢ THEO NGÀY CÓ THỨ 7 & CHỦ NHẬT NỔI BẬT
+   ========================================================================== */
 .matrix-table th,
 .matrix-table td {
-  padding: 8px 6px;
+  padding: 7px 6px;
   font-size: 12.5px;
 }
 
@@ -763,28 +939,80 @@ input:required:user-valid {
   left: 0;
   background: #ffffff;
   z-index: 2;
-  min-width: 170px;
+  min-width: 165px;
   border-right: 2px solid var(--border-color);
 }
 
 .matrix-table thead .sticky-col-left {
-  background: #f1f5f9;
+  background: #1e293b;
   z-index: 3;
 }
 
 .day-col-header {
-  min-width: 36px;
+  min-width: 48px;
   text-align: center;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cal-n {
+  font-size: 10.5px;
+  opacity: 0.78;
+}
+
+.cal-dow {
+  font-size: 13px;
+  font-weight: 800;
+  margin: 1px 0;
+}
+
+.cal-date {
+  font-size: 10.5px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+/* Màu cột Thứ 7 (Vàng Cam) và Chủ Nhật (Đỏ San Hô) trên Header & Ô dữ liệu */
+.matrix-table thead th.col-saturday {
+  background: #d97706 !important;
+  color: #ffffff !important;
+}
+
+.matrix-table thead th.col-sunday {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+.matrix-table thead th.col-dayoff {
+  background: #64748b !important;
+  opacity: 0.85;
 }
 
 .day-cell {
   text-align: center;
-  min-width: 36px;
-  border-left: 1px solid #f1f5f9;
+  min-width: 48px;
+  border-left: 1px solid #e2e8f0;
+  position: relative;
 }
 
-.active-day-cell {
-  border-radius: 4px;
+.cell-saturday {
+  background-color: #fffbeb;
+}
+
+.cell-sunday {
+  background-color: #fef2f2;
+}
+
+.cell-dayoff {
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  font-size: 11px;
+  font-style: italic;
+}
+
+.surge-dot {
+  font-size: 10px;
+  margin-left: 1px;
+  vertical-align: super;
 }
 
 .empty-day-cell {
@@ -792,22 +1020,27 @@ input:required:user-valid {
 }
 
 .mini-crew-pill {
-  background: #f1f5f9;
+  background: #e2e8f0;
   padding: 2px 7px;
   border-radius: 99px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 11.5px;
 }
 
 .matrix-total-row td {
-  background: #0f172a;
-  color: #ffffff;
+  background: #0f172a !important;
+  color: #ffffff !important;
   font-weight: 700;
 }
 
 .matrix-total-row .sticky-col-left {
-  background: #0f172a;
-  color: #38bdf8;
+  background: #0f172a !important;
+  color: #38bdf8 !important;
+}
+
+.foot-weekend {
+  background: #1e293b !important;
+  color: #fde68a !important;
 }
 
 .peak-day-cell {
@@ -821,8 +1054,8 @@ dialog {
   border-radius: var(--radius-lg);
   box-shadow: 0 20px 45px rgba(15, 23, 42, 0.28);
   padding: 0;
-  max-width: 880px;
-  width: 92vw;
+  max-width: 960px;
+  width: 94vw;
   max-height: 86vh;
 }
 
@@ -862,7 +1095,7 @@ dialog::backdrop {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   padding: 16px 18px;
-  max-width: 420px;
+  max-width: 440px;
   background: #ffffff;
   color: var(--text-main);
   box-shadow: var(--shadow-md);
@@ -925,7 +1158,7 @@ dialog::backdrop {
   .no-print,
   .app-header .header-actions,
   .template-bar,
-  .input-hub-card,
+  .zone-sky,
   .btn-icon-delete,
   #btn-add-blank-row {
     display: none !important;
@@ -933,7 +1166,7 @@ dialog::backdrop {
 
   body {
     background: #ffffff;
-    font-size: 11.5px;
+    font-size: 11px;
   }
 
   .app-header {
@@ -950,15 +1183,14 @@ dialog::backdrop {
   }
 
   .main-container {
-    margin: 10px 0;
+    margin: 8px 0;
     padding: 0;
     max-width: 100%;
+    gap: 14px;
   }
 
-  .card {
+  .zone-block {
     box-shadow: none;
-    border: 1px solid #cbd5e1;
     page-break-inside: avoid;
-    margin-bottom: 12px;
   }
 }
