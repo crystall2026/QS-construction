@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crystal Interior QS — Phần Mềm Dự Toán Nhân Công & Điều Phối Thợ Fitout - Nội Thất</title>
+  <meta name="description" content="Hệ thống tính toán số công, số lượng thợ và lập bảng điều phối nhân lực thi công nội thất, fitout, điện MEP, thạch cao, sơn nước, ốp lát cho Crystal Interior (qs.crystal-interior.com)." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <!-- Thư viện SheetJS đọc & xuất file Excel BOQ (.xlsx, .xls, .csv) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+</head>
+<body>
+  <!-- HEADER ĐIỀU HÀNH -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-group">
+        <div class="brand-logo" aria-hidden="true">QS</div>
+        <div>
+          <h1 class="brand-title">CRYSTAL INTERIOR — DỰ TOÁN & ĐIỀU PHỐI NHÂN CÔNG</h1>
+          <p class="brand-subtitle">Hệ thống tính số công, phân bổ tổ đội thợ Fitout • Nội thất • MEP • Thạch cao • Sơn nước • Ốp lát (qs.crystal-interior.com)</p>
+        </div>
+      </div>
+
+      <div class="header-actions no-print">
+        <button type="button" class="btn-header" commandfor="norms-dialog" command="show-modal">
+          📖 Thư viện Định mức Chuẩn
+        </button>
+        <button type="button" class="btn-header" commandfor="guide-popover" command="toggle-popover">
+          💡 Hướng dẫn Sếp dùng nhanh
+        </button>
+        <button type="button" class="btn-header" commandfor="settings-dialog" command="show-modal">
+          🔑 Cấu hình AI Key
+        </button>
+        <button type="button" id="btn-print-report" class="btn-header">
+          🖨️ In / Xuất PDF Trình Sếp
+        </button>
+        <button type="button" id="btn-export-excel" class="btn-header btn-header-gold">
+          📊 Xuất File Excel (.xlsx)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- POPOVER HƯỚNG DẪN NHANH (Declarative Popover Control) -->
+  <div id="guide-popover" class="help-popover" popover>
+    <h3 style="margin-top:0; color:#0f4c81;">💡 Cách sử dụng trong 10 giây</h3>
+    <ol style="padding-left:18px; margin:8px 0 14px; font-size:13px;">
+      <li><strong>Cách 1 (Nhập khối lượng tổng):</strong> Điền trực tiếp số m² tường thạch cao, sơn nước, ốp lát... vào khung bên trái rồi bấm <em>"Tính Nhanh Khối Lượng Tổng"</em>.</li>
+      <li><strong>Cách 2 (Tải file BOQ):</strong> Kéo thả file <strong>Excel (.xlsx)</strong> hoặc <strong>PDF (.pdf)</strong> bảng dự toán vào khung bên phải để hệ thống tự bóc tách.</li>
+      <li><strong>Cách 3 (Ép tiến độ):</strong> Thay đổi ô <strong>"Tổng tiến độ mục tiêu (Số ngày)"</strong>, phần mềm sẽ tự động tính lại mỗi ngày cần bao nhiêu thợ cho từng tổ đội!</li>
+    </ol>
+    <button type="button" class="btn-secondary btn-sm" commandfor="guide-popover" command="hide-popover">Đã hiểu, đóng lại</button>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-container">
+
+    <!-- THANH CHỌN NHANH DỰ ÁN MẪU -->
+    <section class="template-bar no-print" aria-label="Chọn dự án mẫu">
+      <span class="template-label">⚡ Xem nhanh kịch bản mẫu:</span>
+      <button type="button" class="tpl-chip" data-template="quickSample">
+        100m² Thạch cao + 200m² Sơn + 60m² Ốp lát (10 ngày)
+      </button>
+      <button type="button" class="tpl-chip" data-template="office250">
+        🏢 Fitout Văn phòng 250m² (25 ngày)
+      </button>
+      <button type="button" class="tpl-chip" data-template="apartment85">
+        🏠 Nội thất Căn hộ 2PN 85m² (20 ngày)
+      </button>
+      <button type="button" class="tpl-chip" data-template="showroom120">
+        🛍️ Cải tạo Showroom 120m² (14 ngày)
+      </button>
+    </section>
+
+    <!-- KHU VỰC NHẬP LIỆU ĐA NĂNG: NHẬP KHỐI LƯỢNG TỔNG + UPLOAD BOQ EXCEL/PDF + AI PROMPT -->
+    <section class="card input-hub-card no-print">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2>📥 Bước 1: Nhập Khối Lượng Tổng hoặc Tải Lên Bảng BOQ (Excel / PDF)</h2>
+          <p>Hỗ trợ nhập nhanh theo khối lượng tổng (VD: 100m² tường thạch cao, sơn nước...) hoặc đọc tự động từ file BOQ của phòng Dự toán.</p>
+        </div>
+        <button type="button" id="btn-download-sample-boq" class="btn-secondary btn-sm">
+          ⬇️ Tải file BOQ Excel mẫu (.xlsx)
+        </button>
+      </div>
+
+      <div class="input-hub-grid">
+        <!-- CỘT TRÁI: NHẬP NHANH KHỐI LƯỢNG TỔNG CÁC HẠNG MỤC PHỔ BIẾN -->
+        <div>
+          <form id="quick-grid-form" novalidate>
+            <div style="font-weight:700; color:#0f4c81; margin-bottom:10px; font-size:13.5px;">
+              🔢 Nhập nhanh khối lượng tổng (Điền hạng mục nào tính hạng mục đó):
+            </div>
+            <div class="quick-fields-grid">
+              <div class="quick-field-item">
+                <label for="q-gypsum-wall">🏗️ Vách tường thạch cao</label>
+                <div class="quick-input-wrap">
+                  <input type="number" id="q-gypsum-wall" value="100" min="0" step="any" placeholder="VD: 100" />
+                  <span class="unit-tag">m² (9m²/công)</span>
+                </div>
+              </div>
+
+              <div class="quick-field-item">
+                <label for="q-gypsum-ceil">🏗️ Trần thạch cao chìm</label>
+                <div class="quick-input-wrap">
+                  <input type="number" id="q-gypsum-ceil" value="0" min="0" step="any" placeholder="VD: 120" />
+                  <span class="unit-tag">m² (11m²/công)</span>
+                </div>
+              </div>
+
+              <div class="quick-field-item">
+                <label for="q-paint">🎨 Sơn nước & bả matit</label>
+                <div class="quick-input-wrap">
+                  <input type="number" id="q-paint" value="200" min="0" step="any" placeholder="VD: 200" />
+                  <span class="unit-tag">m² (18m²/công)</span>
+                </div>
+              </div>
+
+              <div class="quick-field-item">
+                <label for="q-tile">🧱 Ốp lát gạch nền/tường</label>
+                <div class="quick-input-wrap">
+                  <input type="number" id="q-tile" value="60" min="0" step="any" placeholder="VD: 60" />
+                  <span class="unit-tag">m² (7.5m²/công)</span>
+                </div>
+              </div>
+
+              <div class="quick-field-item">
+                <label for="q-mep">⚡ Điện & Chiếu sáng (MEP)</label>
+                <div class="quick-input-wrap">
+                  <input type="number" id="q-mep" value="100" min="0" step="any" placeholder="VD: 100" />
+                  <span class="unit-tag">m² sàn (8m²/công)</span>
+                </div>
+              </div>
+
+              <div class="quick-field-item">
+                <label for="q-floor">🪵 Lát sàn gỗ / Sàn nhựa</label>
+                <div class="quick-input-wrap">
+                  <input type="number" id="q-floor" value="0" min="0" step="any" placeholder="VD: 80" />
+                  <span class="unit-tag">m² (25m²/công)</span>
+                </div>
+              </div>
+
+              <div class="quick-field-item">
+                <label for="q-furniture">🚪 Nội thất gỗ (Tủ/Vách)</label>
+                <div class="quick-input-wrap">
+                  <input type="number" id="q-furniture" value="0" min="0" step="any" placeholder="VD: 35" />
+                  <span class="unit-tag">m² (4m²/công)</span>
+                </div>
+              </div>
+
+              <div class="quick-field-item">
+                <label for="q-demo">🔨 Tháo dỡ / Vệ sinh</label>
+                <div class="quick-input-wrap">
+                  <input type="number" id="q-demo" value="0" min="0" step="any" placeholder="VD: 100" />
+                  <span class="unit-tag">m² (25m²/công)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="quick-form-actions">
+              <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:#475569; cursor:pointer;">
+                <input type="checkbox" id="quick-replace-checkbox" checked />
+                Thay thế bảng hiện tại (bỏ chọn nếu muốn cộng nối tiếp vào bảng dưới)
+              </label>
+              <button type="submit" class="btn-primary">
+                ⚡ Tính Nhanh Khối Lượng Tổng
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- CỘT PHẢI: UPLOAD FILE BOQ EXCEL / PDF & NHẬP CÂU TỰ NHIÊN BẰNG GEMINI AI -->
+        <div>
+          <div id="boq-dropzone" class="boq-dropzone">
+            <div class="dropzone-icon" aria-hidden="true">📂</div>
+            <p class="dropzone-title">Kéo thả file BOQ (Excel .xlsx, .xls, .csv hoặc .pdf) vào đây</p>
+            <p class="dropzone-sub">Tự động nhận diện cột Hạng mục, Đơn vị, Khối lượng & ánh xạ vào Tổ đội thợ</p>
+            <div class="file-btn-row">
+              <label for="boq-file-input" class="btn-primary btn-sm" style="cursor:pointer;">
+                📤 Chọn File BOQ Excel / PDF
+              </label>
+              <input type="file" id="boq-file-input" accept=".xlsx,.xls,.csv,.pdf" hidden />
+            </div>
+          </div>
+
+          <!-- Form nhập yêu cầu bằng câu tự nhiên (Required Field Feedback compliant) -->
+          <form id="nl-prompt-form" novalidate>
+            <label for="nl-prompt-input" style="display:block; font-weight:700; font-size:13px; color:#0f4c81; margin-bottom:5px;">
+              ✨ Hoặc gõ mô tả công việc tự nhiên để AI / Hệ thống tự tách (Bắt buộc khi bấm nút dưới *):
+            </label>
+            <input
+              type="text"
+              id="nl-prompt-input"
+              name="nl-prompt-input"
+              required
+              aria-errormessage="nl-prompt-error"
+              placeholder="VD: 120m2 vách thạch cao, 250m2 sơn nước, 80m2 lát gạch, 40 bộ đèn âm trần, 25m2 tủ áo..."
+              style="width:100%; padding:9px 11px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;"
+            />
+            <div id="nl-prompt-error" class="error-msg">
+              <span aria-hidden="true">❌</span> Vui lòng nhập mô tả khối lượng công việc cần bóc tách (VD: 100m2 tường thạch cao, 200m2 sơn nước).
+            </div>
+
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:9px;">
+              <button type="submit" class="btn-secondary btn-sm">
+                ⚡ Tách Nhanh Tức Thì
+              </button>
+              <button type="button" id="btn-ai-deep-parse" class="btn-accent btn-sm">
+                ✨ Phân Tích Sâu Bằng Google Gemini AI
+              </button>
+            </div>
+          </form>
+
+          <div id="ai-status-banner" class="ai-status-banner" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- THANH ĐIỀU KHIỂN THÔNG SỐ TIẾN ĐỘ & CA LÀM VIỆC CHO SẾP -->
+    <section class="params-strip" aria-label="Thông số điều hành dự án">
+      <div class="param-box">
+        <label for="project-title-input">📌 Tên Dự Án / Gói Thầu Báo Cáo Sếp</label>
+        <input type="text" id="project-title-input" value="" />
+      </div>
+
+      <div class="param-box">
+        <label for="target-days-input">🗓️ Tổng Tiến Độ Mục Tiêu (Ngày)</label>
+        <input type="number" id="target-days-input" value="10" min="1" max="365" />
+      </div>
+
+      <div class="param-box">
+        <label for="shift-select">⏰ Thời Gian Làm Việc / Ngày</label>
+        <select id="shift-select">
+          <option value="8">8 giờ/ngày (1 ca chuẩn)</option>
+          <option value="10">10 giờ/ngày (Tăng ca tối nhẹ - x1.22)</option>
+          <option value="12">12 giờ/ngày (Tăng ca gấp 1.5 ca - x1.45)</option>
+        </select>
+      </div>
+
+      <div class="param-box">
+        <label for="difficulty-select">🏢 Điều Kiện Mặt Bằng Thi Công</label>
+        <select id="difficulty-select">
+          <option value="1">Nhà phố / Mặt bằng thông thoáng (x1.0)</option>
+          <option value="1.05">Chung cư (vận chuyển thang máy - x1.05)</option>
+          <option value="1.1">Tòa nhà Văn phòng (giờ giấc quy định - x1.10)</option>
+          <option value="1.2">TTTM / Làm ca đêm hoàn toàn (x1.20)</option>
+        </select>
+      </div>
+
+      <div class="param-box">
+        <label class="checkbox-label" for="auto-scale-crew" title="Khi bật, nếu Sếp giảm số ngày thi công, phần mềm sẽ tự động tăng số thợ/ngày để kịp tiến độ">
+          <input type="checkbox" id="auto-scale-crew" checked />
+          <span>Tự động co giãn số thợ theo tiến độ</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- 4 THẺ KPI TỔNG HỢP TRÌNH SẾP -->
+    <section class="kpi-grid" aria-label="Chỉ số nhân công tổng quan">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-label">1. Tổng Hao Phí Nhân Công</div>
+        <div id="kpi-total-mandays" class="kpi-value">0 công</div>
+        <div id="kpi-mandays-sub" class="kpi-sub">Đang tính toán...</div>
+      </div>
+
+      <div class="kpi-card kpi-amber">
+        <div class="kpi-label">2. Tiến Độ Thi Công Yêu Cầu</div>
+        <div id="kpi-target-days" class="kpi-value">10 ngày</div>
+        <span id="kpi-urgency-badge" class="status-pill pill-ok">✅ Tiến độ khả thi</span>
+      </div>
+
+      <div class="kpi-card kpi-emerald">
+        <div class="kpi-label">3. Quân Số Thợ Cần Điều Phối</div>
+        <div id="kpi-crew-allocation" class="kpi-value">0 thợ/ngày</div>
+        <div id="kpi-crew-sub" class="kpi-sub">Trung bình & cao điểm trên công trường</div>
+      </div>
+
+      <div class="kpi-card kpi-purple">
+        <div class="kpi-label">4. Dự Trù Chi Phí Nhân Công</div>
+        <div id="kpi-total-cost" class="kpi-value">0 đ</div>
+        <div id="kpi-cost-sub" class="kpi-sub">Tạm tính theo đơn giá công từng tổ</div>
+      </div>
+    </section>
+
+    <!-- GHI CHÚ ĐIỀU HÀNH QS TRƯỞNG -->
+    <div class="exec-note-banner">
+      <div>
+        <strong>📋 Nhận định Điều phối Nhân lực:</strong>
+        <span id="executive-note-text"></span>
+      </div>
+    </div>
+
+    <!-- BẢNG 1: BẢNG TỔNG HỢP PHÂN BỔ THỢ THEO TỔ ĐỘI (DỄ HIỂU NHẤT CHO SẾP) -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2>👷 Bảng 1: Tổng Hợp Phân Bổ Số Thợ & Thời Gian Theo Tổ Đội Chuyên Môn (Báo Cáo Sếp)</h2>
+          <p>Bảng tóm tắt giúp Sếp nắm ngay: Cần gọi những đội thợ nào, mỗi đội bao nhiêu người/ngày, vào làm từ ngày nào đến ngày nào và hết bao nhiêu tiền công.</p>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="qs-table">
+          <thead>
+            <tr>
+              <th class="text-center" style="width:50px;">STT</th>
+              <th>Tổ Đội Chuyên Môn & Phạm Vi Công Việc</th>
+              <th class="text-right" style="width:140px;">Tổng Số Công</th>
+              <th class="text-center" style="width:190px;">Giai Đoạn Vào Việc</th>
+              <th class="text-center highlight-col" style="width:190px;">Số Thợ Cần Bố Trí / Ngày</th>
+              <th class="text-right" style="width:155px;">Đơn Giá Công (Sửa được)</th>
+              <th class="text-right" style="width:165px;">Chi Phí Nhân Công</th>
+            </tr>
+          </thead>
+          <tbody id="trade-summary-tbody"></tbody>
+          <tfoot id="trade-summary-tfoot"></tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- BẢNG 2: LỊCH ĐIỀU PHỐI THỢ THEO TỪNG NGÀY (GANTT MATRIX) -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2>📅 Bảng 2: Biểu Đồ Kế Hoạch Điều Phối Quân Số Thợ Trên Công Trường Theo Ngày</h2>
+          <p>Con số trong từng ô là <strong>số người thực tế có mặt trên công trường</strong> của từng tổ đội ở ngày đó (tự động sắp xếp gối đầu theo trình tự Fitout chuẩn).</p>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="qs-table matrix-table">
+          <thead id="schedule-matrix-thead"></thead>
+          <tbody id="schedule-matrix-tbody"></tbody>
+          <tfoot id="schedule-matrix-tfoot"></tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- BẢNG 3: BẢNG DỰ TOÁN HAO PHÍ NHÂN CÔNG CHI TIẾT TỪNG HẠNG MỤC BOQ -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2>📋 Bảng 3: Chi Tiết Khối Lượng BOQ, Định Mức Năng Suất & Số Ngày Hoàn Thành Từng Việc</h2>
+          <p>Sếp hoặc QS có thể nhấp trực tiếp vào ô <strong>Khối lượng</strong>, <strong>Định mức (KL/công)</strong> hoặc <strong>Số thợ/ngày</strong> để chỉnh sửa tức thì.</p>
+        </div>
+        <div class="no-print" style="display:flex; gap:8px;">
+          <button type="button" id="btn-add-blank-row" class="btn-primary btn-sm">
+            + Thêm Dòng Công Việc
+          </button>
+          <button type="button" class="btn-secondary btn-sm" commandfor="norms-dialog" command="show-modal">
+            📚 Chọn từ Thư viện Định mức
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="qs-table">
+          <thead>
+            <tr>
+              <th class="text-center" style="width:46px;">STT</th>
+              <th>Nội Dung Công Việc / Hạng Mục Thi Công</th>
+              <th style="width:175px;">Tổ Đội Đảm Nhận</th>
+              <th class="text-center" style="width:72px;">ĐVT</th>
+              <th class="text-right" style="width:105px;">Khối Lượng</th>
+              <th class="text-right" style="width:115px;">Năng Suất (1 công)</th>
+              <th class="text-right highlight-mandays" style="width:115px;">Tổng Số Công</th>
+              <th class="text-center" style="width:95px;">Số Thợ/Ngày</th>
+              <th class="text-center" style="width:105px;">Số Ngày Xong</th>
+              <th class="text-right" style="width:145px;">Thành Tiền Công</th>
+              <th class="text-center no-print" style="width:44px;">Xóa</th>
+            </tr>
+          </thead>
+          <tbody id="boq-detail-tbody"></tbody>
+          <tfoot id="boq-detail-tfoot"></tfoot>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- DIALOG 1: THƯ VIỆN ĐỊNH MỨC NHÂN CÔNG CHUẨN FITOUT & NỘI THẤT (Declarative Dialog Control) -->
+  <dialog id="norms-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-header">
+        <h3>📖 Thư Viện Định Mức Năng Suất Nhân Công Fitout & Nội Thất (Crystal Interior)</h3>
+        <button type="button" class="btn-secondary btn-sm" commandfor="norms-dialog" command="close">✕ Đóng</button>
+      </div>
+      <p style="margin:0; font-size:13px; color:#475569;">
+        Định mức dưới đây tính theo <strong>khối lượng hoàn thành của 1 công thợ (8 giờ làm việc)</strong>. Bấm <strong>"+ Đưa vào BOQ"</strong> để thêm nhanh hạng mục vào bảng tính của dự án.
+      </p>
+      <div class="table-responsive">
+        <table class="qs-table">
+          <thead>
+            <tr>
+              <th>Mã ĐM</th>
+              <th>Tên Hạng Mục Công Việc & Ghi Chú</th>
+              <th>Tổ Đội</th>
+              <th class="text-center">ĐVT</th>
+              <th class="text-right">Năng Suất Chuẩn</th>
+              <th class="text-center">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody id="norms-library-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- DIALOG 2: CẤU HÌNH GOOGLE GEMINI API KEY (Declarative Dialog Control) -->
+  <dialog id="settings-dialog">
+    <div class="dialog-inner" style="max-width:520px;">
+      <div class="dialog-header">
+        <h3>🔑 Cấu Hình Google Gemini AI Key</h3>
+        <button type="button" class="btn-secondary btn-sm" commandfor="settings-dialog" command="close">✕ Đóng</button>
+      </div>
+      <form id="api-key-form">
+        <p style="margin-top:0; font-size:13px; color:#475569;">
+          Hệ thống đã được tích hợp sẵn Google API Key mặc định của bạn để đọc file PDF & phân tích BOQ tự động. Nếu muốn đổi sang API Key khác, bạn có thể nhập vào ô dưới đây (để trống để dùng Key mặc định):
+        </p>
+        <div style="margin-bottom:14px;">
+          <label for="custom-api-key-input" style="display:block; font-weight:600; margin-bottom:6px;">Google Gemini API Key tùy chỉnh:</label>
+          <input
+            type="password"
+            id="custom-api-key-input"
+            placeholder="Đang sử dụng API Key mặc định của Crystal Interior..."
+            style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px;"
+          />
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn-secondary" commandfor="settings-dialog" command="close">Hủy</button>
+          <button type="submit" class="btn-primary">Lưu Cấu Hình</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
