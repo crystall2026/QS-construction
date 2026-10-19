@@ -1,6 +1,45 @@
 // Cơ sở dữ liệu Định mức Nhân công Thực tế Ngành Thi công Nội thất & Fitout Trong Tòa Nhà (Crystal Interior QS)
 // Đơn vị năng suất: Khối lượng hoàn thành bởi 1 công (1 thợ làm việc 8h/ngày)
 
+export const PROJECT_TYPES = {
+  OFFICE_BUILDING: {
+    id: 'OFFICE_BUILDING',
+    name: '🏢 Tòa Nhà Văn Phòng',
+    shortName: 'Tòa nhà văn phòng',
+    defaultDifficulty: 1.10,
+    defaultWeekendMode: 'WEEKEND_NOISY_FOCUS',
+    defaultShift: 8,
+    description: 'Quy định gắt gao về tiếng ồn giờ hành chính. Bắt buộc dồn các việc khoan bê tông, đập phá, cắt gạch đá và dùng thang hàng vào Thứ 7 & Chủ Nhật.'
+  },
+  APARTMENT: {
+    id: 'APARTMENT',
+    name: '🏠 Khu Căn Hộ Chung Cư',
+    shortName: 'Căn hộ chung cư',
+    defaultDifficulty: 1.05,
+    defaultWeekendMode: 'SAT_WORK_SUN_OFF',
+    defaultShift: 8,
+    description: 'BQL chung cư thường cấm thi công gây ồn vào Chủ Nhật và giờ nghỉ trưa (11h30 - 13h30). Tranh thủ làm việc ồn vào Thứ 7.'
+  },
+  TOWNHOUSE: {
+    id: 'TOWNHOUSE',
+    name: '🏡 Nhà Phố / Biệt Thự',
+    shortName: 'Nhà phố / Biệt thự',
+    defaultDifficulty: 1.00,
+    defaultWeekendMode: 'FULL_WITH_WEEKEND_BOOST',
+    defaultShift: 8,
+    description: 'Mặt bằng độc lập, thuận tiện tập kết vật tư và vận chuyển. Có thể thi công xuyên suốt cả Thứ 7 và Chủ Nhật.'
+  },
+  SHOPHOUSE_MALL: {
+    id: 'SHOPHOUSE_MALL',
+    name: '🛍️ Shophouse / TTTM',
+    shortName: 'Shophouse / TTTM',
+    defaultDifficulty: 1.20,
+    defaultWeekendMode: 'FULL_WITH_WEEKEND_BOOST',
+    defaultShift: 8,
+    description: 'Nhiều TTTM chỉ cho phép thi công sau 22h đêm và kiểm tra PCCC cực kỳ nghiêm ngặt. Hệ số hao phí nhân công cao hơn.'
+  }
+};
+
 export const WEEKEND_TAGS = {
   HIGH_NOISE_WEEKEND: {
     id: 'HIGH_NOISE_WEEKEND',
@@ -643,9 +682,10 @@ export const LABOR_NORMS = [
 export const PROJECT_TEMPLATES = {
   office250: {
     title: 'Fitout Văn Phòng Hạng A Trong Tòa Nhà - 250m²',
+    projectType: 'OFFICE_BUILDING',
     targetDays: 20,
     difficultyFactor: 1.1,
-    weekendMode: 'FULL_WITH_WEEKEND_BOOST',
+    weekendMode: 'WEEKEND_NOISY_FOCUS',
     items: [
       { code: 'DEMO-01', name: 'Tháo dỡ vách thạch cao & trần cũ mặt bằng thuê', trade: 'DEMO', unit: 'm2', quantity: 140, productivityPerManDay: 25.0, crewSize: 3, weekendTag: 'HIGH_NOISE_WEEKEND' },
       { code: 'GYP-03', name: 'Thi công vách thạch cao 2 mặt có bông cách âm phòng họp & GĐ', trade: 'GYPSUM', unit: 'm2', quantity: 165, productivityPerManDay: 7.5, crewSize: 4, weekendTag: 'HIGH_NOISE_WEEKEND' },
@@ -662,6 +702,7 @@ export const PROJECT_TEMPLATES = {
   },
   apartment85: {
     title: 'Hoàn Thiện & Nội Thất Căn Hộ Chung Cư 2PN - 85m²',
+    projectType: 'APARTMENT',
     targetDays: 18,
     difficultyFactor: 1.05,
     weekendMode: 'SAT_WORK_SUN_OFF',
@@ -682,8 +723,9 @@ export const PROJECT_TEMPLATES = {
   },
   showroom120: {
     title: 'Cải Tạo & Fitout Showroom TTTM - 120m²',
+    projectType: 'SHOPHOUSE_MALL',
     targetDays: 14,
-    difficultyFactor: 1.1,
+    difficultyFactor: 1.2,
     weekendMode: 'FULL_WITH_WEEKEND_BOOST',
     items: [
       { code: 'DEMO-01', name: 'Tháo dỡ trần vách cũ & dọn mặt bằng qua thang tải', trade: 'DEMO', unit: 'm2', quantity: 90, productivityPerManDay: 25.0, crewSize: 3, weekendTag: 'HIGH_NOISE_WEEKEND' },
@@ -697,10 +739,11 @@ export const PROJECT_TEMPLATES = {
     ]
   },
   quickSample: {
-    title: 'Ví dụ Nhập nhanh: 100m² Tường Thạch Cao + 200m² Sơn Nước + 60m² Ốp Lát',
+    title: 'Dự án: 100m² Vách Thạch Cao + 200m² Sơn Nước + 60m² Ốp Lát',
+    projectType: 'OFFICE_BUILDING',
     targetDays: 10,
-    difficultyFactor: 1.0,
-    weekendMode: 'FULL_WITH_WEEKEND_BOOST',
+    difficultyFactor: 1.1,
+    weekendMode: 'WEEKEND_NOISY_FOCUS',
     items: [
       { code: 'GYP-02', name: 'Thi công vách tường thạch cao 2 mặt khung xương Vĩnh Tường', trade: 'GYPSUM', unit: 'm2', quantity: 100, productivityPerManDay: 9.0, crewSize: 3, weekendTag: 'HIGH_NOISE_WEEKEND' },
       { code: 'PNT-01', name: 'Bả bột matit 2 lớp + xả nhám + sơn nước hoàn thiện (2 mặt vách)', trade: 'PAINT', unit: 'm2', quantity: 200, productivityPerManDay: 18.0, crewSize: 3, weekendTag: 'QUIET_WEEKDAY' },

@@ -1,5 +1,5 @@
-// Logic trung tâm: Tính toán định mức nhân công, lịch Thứ 7 - Chủ Nhật, tự tính ngày kết thúc & lưu ý đặc thù Fitout tòa nhà
-import { TRADES, LABOR_NORMS, PROJECT_TEMPLATES, WEEKEND_TAGS } from './norms-data.js';
+// Logic trung tâm: Dashboard gọn gàng, Modal Nhập liệu & Thiết lập, Phân loại dự án (Tòa nhà, Căn hộ, Nhà phố, Shophouse), Lịch Thứ 7 - CN & Xuất PDF hoàn hảo
+import { TRADES, LABOR_NORMS, PROJECT_TEMPLATES, WEEKEND_TAGS, PROJECT_TYPES } from './norms-data.js';
 import {
   getActiveApiKey,
   setCustomApiKey,
@@ -100,7 +100,7 @@ const UserInvalidFallback = (() => {
   return { init };
 })();
 
-// --- 2. NGÀY BẮT ĐẦU MẶC ĐỊNH & Hỗ TRỢ LỊCH THỨ 7 - CHỦ NHẬT ---
+// --- 2. HỖ TRỢ LỊCH THỨ 7 - CHỦ NHẬT & NGÀY KHỞI CÔNG ---
 function getTodayISOString() {
   const now = new Date();
   const y = now.getFullYear();
@@ -135,7 +135,6 @@ export const WEEKEND_MODES = {
   }
 };
 
-// Xây dựng danh sách ngày lịch thực tế (Calendar Days) từ ngày bắt đầu + số ngày làm việc yêu cầu + chế độ T7/CN
 function buildProjectCalendar(startDateISO, targetWorkingDays, weekendMode) {
   const parts = (startDateISO || getTodayISOString()).split('-').map(Number);
   const startObj = new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
@@ -150,7 +149,7 @@ function buildProjectCalendar(startDateISO, targetWorkingDays, weekendMode) {
 
   while (workingDaysAccum < targetWorkingDays && safetyCounter < 500) {
     safetyCounter++;
-    const dow = cursor.getDay(); // 0 = CN, 6 = T7
+    const dow = cursor.getDay();
     const isSat = dow === 6;
     const isSun = dow === 0;
     const isWeekend = isSat || isSun;
@@ -171,7 +170,7 @@ function buildProjectCalendar(startDateISO, targetWorkingDays, weekendMode) {
     const yyyy = cursor.getFullYear();
 
     calendarDays.push({
-      dayIndex: calendarDays.length + 1, // Ngày lịch thứ mấy (N1, N2...)
+      dayIndex: calendarDays.length + 1,
       workingDayIndex: isWorkingDay ? workingDaysAccum : null,
       dateObj: new Date(cursor),
       dateShort: `${dd}/${mm}`,
@@ -209,13 +208,14 @@ function buildProjectCalendar(startDateISO, targetWorkingDays, weekendMode) {
 // --- 3. APPLICATION STATE ---
 const state = {
   projectTitle: PROJECT_TEMPLATES.quickSample.title,
+  projectType: PROJECT_TEMPLATES.quickSample.projectType || 'OFFICE_BUILDING',
   startDate: getTodayISOString(),
-  targetDays: PROJECT_TEMPLATES.quickSample.targetDays, // Số ngày làm việc mục tiêu
-  weekendMode: PROJECT_TEMPLATES.quickSample.weekendMode || 'FULL_WITH_WEEKEND_BOOST',
+  targetDays: PROJECT_TEMPLATES.quickSample.targetDays,
+  weekendMode: PROJECT_TEMPLATES.quickSample.weekendMode || 'WEEKEND_NOISY_FOCUS',
   difficultyFactor: PROJECT_TEMPLATES.quickSample.difficultyFactor,
   hoursPerDay: 8,
   autoScaleCrewToTargetDays: true,
-  executiveNote: 'Định mức đang tính theo năng suất thi công Fitout trong tòa nhà của Crystal Interior. Hệ thống đã tự động phân loại các việc ồn/khoan đục/vận chuyển thang hàng cần tranh thủ làm vào Thứ 7 & Chủ Nhật.',
+  executiveNote: 'Định mức đang tính theo năng suất thi công Fitout thực tế của Crystal Interior. Hệ thống đã phân định các việc ồn/khoan đục cần tranh thủ làm vào Thứ 7 & Chủ Nhật.',
   tradeWages: Object.fromEntries(
     Object.entries(TRADES).map(([k, v]) => [k, v.defaultDailyWage])
   ),
@@ -240,17 +240,15 @@ function formatNum(num, decimals = 1) {
   return Number.isInteger(val) ? val.toString() : val.toFixed(decimals);
 }
 
-// --- 4. CORE ENGINE: TÍNH SỐ CÔNG, NGÀY KẾT THÚC & LỊCH BIỂU CÓ THỨ 7 - CN ---
+// --- 4. CORE ENGINE ---
 export function calculateProjectManpower() {
   const shiftMult = getShiftMultiplier(state.hoursPerDay);
   const diffFactor = Number(state.difficultyFactor) || 1.0;
-  const targetWorkingDays = Math.max(1, Math.round(Number(state.targetDays) || 12));
+  const targetWorkingDays = Math.max(1, Math.round(Number(state.targetDays) || 10));
 
-  // Bước 1: Xây dựng lịch thực tế từ Ngày bắt đầu + Chế độ làm Thứ 7 - CN
   const cal = buildProjectCalendar(state.startDate, targetWorkingDays, state.weekendMode);
   const totalCalendarDays = cal.totalCalendarDays;
 
-  // Bước 2: Tính hao phí công (Man-days) cho từng hạng mục BOQ
   const enrichedItems = state.items.map((item, idx) => {
     const tradeKey = TRADES[item.trade] ? item.trade : 'FURNITURE';
     const baseProd = Math.max(0.05, Number(item.productivityPerManDay) || 10);
@@ -295,7 +293,6 @@ export function calculateProjectManpower() {
   const totalManDays = enrichedItems.reduce((sum, it) => sum + it.manDays, 0);
   const totalLaborCost = enrichedItems.reduce((sum, it) => sum + it.laborCost, 0);
 
-  // Bước 3: Gom nhóm theo Tổ đội & Phân bổ thợ theo lịch thực tế (Bao gồm ưu tiên Thứ 7 - CN cho việc ồn trong tòa nhà)
   const dailyTotalWorkers = new Array(totalCalendarDays).fill(0);
   const tradeSummaries = [];
   const activeTradeKeys = new Set(enrichedItems.map(i => i.trade));
@@ -308,7 +305,6 @@ export function calculateProjectManpower() {
     const tradeCost = tradeItems.reduce((s, it) => s + it.laborCost, 0);
     const sharePct = totalManDays > 0 ? (tradeManDays / totalManDays) * 100 : 0;
 
-    // Kiểm tra xem tổ đội này có các hạng mục ồn/cần thang tải ưu tiên làm Thứ 7 - CN không
     const noisyManDays = tradeItems
       .filter(it => it.weekendTag === 'HIGH_NOISE_WEEKEND' || it.weekendTag === 'LIFT_SMELL_WEEKEND')
       .reduce((s, it) => s + it.manDays, 0);
@@ -336,7 +332,6 @@ export function calculateProjectManpower() {
     const dailyWorkers = new Array(totalCalendarDays).fill(0);
     let remainingManDays = Math.ceil(tradeManDays);
 
-    // Duyệt qua từng ngày lịch từ N1 -> totalCalendarDays
     let firstCalIdx = -1;
     let lastCalIdx = -1;
 
@@ -354,8 +349,6 @@ export function calculateProjectManpower() {
       const workDaysLeftInWindow = Math.max(1, endWorkDay - wIdx + 1);
       let workersToday = Math.max(1, Math.min(recommendedDailyCrew + 1, Math.ceil(remainingManDays / workDaysLeftInWindow)));
 
-      // Nếu hôm nay là Thứ 7 hoặc Chủ Nhật và tổ đội có việc ồn/khoan đục/vận chuyển thang hàng:
-      // Tự động tăng cường thợ (Weekend Surge) để tranh thủ xử lý dứt điểm việc ồn cuối tuần!
       if (calDay.isWeekend && hasWeekendPriorityWork) {
         if (state.weekendMode === 'WEEKEND_NOISY_FOCUS') {
           workersToday = Math.min(remainingManDays, Math.max(recommendedDailyCrew + 2, Math.ceil(recommendedDailyCrew * 1.4)));
@@ -363,7 +356,6 @@ export function calculateProjectManpower() {
           workersToday = Math.min(remainingManDays, recommendedDailyCrew + 1);
         }
       } else if (!calDay.isWeekend && state.weekendMode === 'WEEKEND_NOISY_FOCUS' && tradeKey === 'DEMO') {
-        // Trong tòa nhà văn phòng nghiêm ngặt, tổ đập phá giảm quân ngày thường, dồn vào cuối tuần
         workersToday = Math.max(1, Math.floor(recommendedDailyCrew * 0.6));
       }
 
@@ -414,6 +406,7 @@ export function calculateProjectManpower() {
 
   return {
     ...cal,
+    projectTypeInfo: PROJECT_TYPES[state.projectType] || PROJECT_TYPES.OFFICE_BUILDING,
     targetDays: targetWorkingDays,
     totalManDays,
     totalLaborCost,
@@ -429,74 +422,91 @@ export function calculateProjectManpower() {
 function renderAll() {
   const calc = calculateProjectManpower();
 
-  const titleInput = document.getElementById('project-title-input');
-  if (titleInput && document.activeElement !== titleInput) {
-    titleInput.value = state.projectTitle;
+  // 1. Cập nhật Thanh Tổng Quan Dự Án Gọn Gàng trên đầu trang
+  document.getElementById('display-project-title').textContent = state.projectTitle;
+  const typeInfo = calc.projectTypeInfo;
+  const pTypeBadge = document.getElementById('display-project-type');
+  if (pTypeBadge) {
+    pTypeBadge.textContent = typeInfo.name;
+    pTypeBadge.title = typeInfo.description;
   }
-  const startDateInput = document.getElementById('start-date-input');
-  if (startDateInput && document.activeElement !== startDateInput) {
-    startDateInput.value = state.startDate;
+
+  const pTimelineBadge = document.getElementById('display-project-timeline');
+  if (pTimelineBadge) {
+    pTimelineBadge.textContent = `📅 Bắt đầu: ${calc.calendarDays[0]?.dateShort} ➔ Bàn giao: ${calc.endDateShort} (${calc.workingDaysCount} ngày làm / ${calc.totalCalendarDays} ngày lịch)`;
   }
-  const daysInput = document.getElementById('target-days-input');
-  if (daysInput && document.activeElement !== daysInput) {
-    daysInput.value = state.targetDays;
+
+  const pWeekendBadge = document.getElementById('display-project-weekend');
+  if (pWeekendBadge) {
+    const wm = WEEKEND_MODES[state.weekendMode] || WEEKEND_MODES.FULL_WITH_WEEKEND_BOOST;
+    pWeekendBadge.textContent = `🏢 ${wm.shortDesc}`;
   }
-  const weekendModeSelect = document.getElementById('weekend-mode-select');
-  if (weekendModeSelect) weekendModeSelect.value = state.weekendMode;
 
-  const diffSelect = document.getElementById('difficulty-select');
-  if (diffSelect) diffSelect.value = String(state.difficultyFactor);
+  // Cập nhật giá trị vào 2 Modal Thiết Lập
+  const modalStartDate = document.getElementById('m-start-date-input');
+  if (modalStartDate) modalStartDate.value = state.startDate;
 
-  const shiftSelect = document.getElementById('shift-select');
-  if (shiftSelect) shiftSelect.value = String(state.hoursPerDay);
+  const modalTargetDays = document.getElementById('m-target-days-input');
+  if (modalTargetDays) modalTargetDays.value = state.targetDays;
 
-  const autoScaleCheckbox = document.getElementById('auto-scale-crew');
-  if (autoScaleCheckbox) autoScaleCheckbox.checked = state.autoScaleCrewToTargetDays;
+  const modalWeekendMode = document.getElementById('m-weekend-mode-select');
+  if (modalWeekendMode) modalWeekendMode.value = state.weekendMode;
 
-  // Cập nhật Khối Lịch Trình Bắt Đầu -> Kết Thúc Tự Động
-  document.getElementById('summary-start-date').textContent = calc.startDateFormatted;
-  document.getElementById('summary-end-date').textContent = calc.endDateFormatted;
-  document.getElementById('summary-calendar-breakdown').textContent =
-    `Tổng ${calc.totalCalendarDays} ngày theo lịch (${calc.workingDaysCount} ngày thi công thực tế | ${calc.weekendWorkingCount} ngày làm T7-CN | ${calc.weekendOffCount} ngày nghỉ cuối tuần)`;
+  const modalShift = document.getElementById('m-shift-select');
+  if (modalShift) modalShift.value = String(state.hoursPerDay);
 
-  const execNoteEl = document.getElementById('executive-note-text');
-  if (execNoteEl) execNoteEl.textContent = state.executiveNote;
+  const modalDifficulty = document.getElementById('m-difficulty-select');
+  if (modalDifficulty) modalDifficulty.value = String(state.difficultyFactor);
 
-  // 1. Render 4 Thẻ KPI Tổng quan cho Sếp
+  const modalProjectType = document.getElementById('m-project-type-select');
+  if (modalProjectType) modalProjectType.value = state.projectType;
+
+  const modalAutoScale = document.getElementById('m-auto-scale-crew');
+  if (modalAutoScale) modalAutoScale.checked = state.autoScaleCrewToTargetDays;
+
+  // Cập nhật thẻ kết quả tự động tính ngày trong Modal 2
+  const mCalcSummary = document.getElementById('m-calc-date-summary');
+  if (mCalcSummary) {
+    mCalcSummary.innerHTML = `
+      <div><strong>Khởi công:</strong> ${calc.startDateFormatted}</div>
+      <div style="font-size:15px; font-weight:800; color:#b45309; margin-top:2px;">🏁 Bàn giao: ${calc.endDateFormatted} (${calc.totalCalendarDays} ngày theo lịch)</div>
+    `;
+  }
+
+  // 2. 4 Thẻ KPI Tổng quan
   document.getElementById('kpi-total-mandays').textContent = `${formatNum(calc.totalManDays, 1)} công`;
   document.getElementById('kpi-mandays-sub').textContent =
     `${calc.enrichedItems.length} hạng mục | ${calc.tradeSummaries.length} tổ đội chuyên môn`;
 
   document.getElementById('kpi-target-days').textContent = `${calc.workingDaysCount} ngày làm`;
   const urgencyBadge = document.getElementById('kpi-urgency-badge');
-  urgencyBadge.textContent = `🏁 Xong: ${calc.endDateShort} (${calc.totalCalendarDays} ngày lịch)`;
+  urgencyBadge.textContent = `🏁 Bàn giao: ${calc.endDateShort}`;
   urgencyBadge.className = calc.peakWorkers > 22 ? 'status-pill pill-warn' : 'status-pill pill-ok';
 
   document.getElementById('kpi-crew-allocation').textContent =
     `${Math.ceil(calc.avgDailyWorkers)} – ${calc.peakWorkers} thợ/ngày`;
   document.getElementById('kpi-crew-sub').textContent =
-    `Trung bình ${formatNum(calc.avgDailyWorkers, 1)} người/ngày | Cao điểm: ${calc.peakWorkers} người`;
+    `Trung bình ${formatNum(calc.avgDailyWorkers, 1)} ng/ngày | Đỉnh: ${calc.peakWorkers} ng`;
 
   document.getElementById('kpi-total-cost').textContent = formatVND(calc.totalLaborCost);
   document.getElementById('kpi-cost-sub').textContent =
     `Bình quân ~${formatVND(calc.totalManDays > 0 ? calc.totalLaborCost / calc.totalManDays : 0)}/công (${state.hoursPerDay}h/ngày)`;
 
-  // 2. Render Bảng Lưu Ý Các Việc Cần Tranh Thủ Làm Thứ 7 - Chủ Nhật Trong Tòa Nhà
+  // 3. Khối Tư Vấn & Kế Hoạch Tranh Thủ Làm Thứ 7 - Chủ Nhật
   renderWeekendActionPlan(calc);
 
-  // 3. Render Bảng 1: Tổng Hợp Phân Bổ Thợ Theo Tổ Đội
+  // 4. Bảng 1: Phân Bổ Tổ Đội & Chi Phí
   renderTradeSummaryTable(calc);
 
-  // 4. Render Bảng 2: Lịch Điều Phối Thợ Theo Ngày (Có Thứ 2 -> Thứ 7 & Chủ Nhật)
+  // 5. Bảng 2: Biểu Đồ Lịch Điều Phối Theo Ngày (Có T7 - CN)
   renderDailyScheduleMatrix(calc);
 
-  // 5. Render Bảng 3: Chi Tiết Khối Lượng BOQ & Hao Phí Nhân Công
+  // 6. Bảng 3: Chi Tiết BOQ Tiền Nhân Công & Định Mức
   renderBOQDetailTable(calc);
 
   window.__latestCalcResult = calc;
 }
 
-// Render Bảng Phân Loại Các Công Việc Cần Tranh Thủ Thứ 7 - Chủ Nhật (Đặc thù Fitout Tòa Nhà)
 function renderWeekendActionPlan(calc) {
   const noisyContainer = document.getElementById('weekend-noisy-list');
   const liftContainer = document.getElementById('weekend-lift-list');
@@ -520,7 +530,7 @@ function renderWeekendActionPlan(calc) {
 
   liftContainer.innerHTML = liftItems.length > 0
     ? liftItems.map(formatItemBullet).join('')
-    : `<li><em>Các vật tư nhỏ gọn có thể chuyển linh hoạt hoặc đăng ký thang hàng cuối tuần.</em></li>`;
+    : `<li><em>Vật tư nhỏ gọn hoặc có thể bố trí chuyển linh hoạt theo giờ của tòa nhà.</em></li>`;
 
   quietContainer.innerHTML = quietItems.length > 0
     ? quietItems.map(formatItemBullet).join('')
@@ -533,7 +543,7 @@ function renderTradeSummaryTable(calc) {
   if (!tbody || !tfoot) return;
 
   if (calc.tradeSummaries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-cell">Chưa có hạng mục nào. Hãy nhập khối lượng hoặc tải file BOQ ở trên.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-cell">Chưa có hạng mục nào. Hãy bấm nút "Nhập khối lượng hoặc tải BOQ" ở trên.</td></tr>`;
     tfoot.innerHTML = '';
     return;
   }
@@ -626,7 +636,7 @@ function renderDailyScheduleMatrix(calc) {
     const wkClass = cd.isSun ? 'col-sunday' : (cd.isSat ? 'col-saturday' : '');
     const offClass = !cd.isWorkingDay ? 'col-dayoff' : '';
     headerHTML += `
-      <th class="day-col-header ${wkClass} ${offClass}" title="${cd.dateFull}${!cd.isWorkingDay ? ' (Nghỉ cuối tuần)' : ''}">
+      <th class="day-col-header ${wkClass} ${offClass}" title="${cd.dateFull}${!cd.isWorkingDay ? ' (Nghỉ theo quy định tòa nhà)' : ''}">
         <div class="cal-n">N${cd.dayIndex}</div>
         <div class="cal-dow ${cd.isSun ? 'dow-sun' : (cd.isSat ? 'dow-sat' : '')}">${cd.dowShort}</div>
         <div class="cal-date">${cd.dateShort}</div>
@@ -687,7 +697,7 @@ function renderBOQDetailTable(calc) {
   if (!tbody || !tfoot) return;
 
   if (calc.enrichedItems.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="12" class="empty-cell">Danh sách BOQ trống. Vui lòng thêm công việc hoặc tải file BOQ.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" class="empty-cell">Danh sách BOQ trống. Vui lòng bấm nút "Nhập khối lượng hoặc tải BOQ" ở trên.</td></tr>`;
     tfoot.innerHTML = '';
     return;
   }
@@ -953,68 +963,74 @@ function setLoadingStatus(isLoading, message = '') {
   statusBox.innerHTML = `<span class="spinner"></span> <span>${message}</span>`;
 }
 
+// XỬ LÝ IN / XUẤT PDF HOÀN HẢO (Khắc phục lỗi in chỉ ra tiêu đề)
+function handlePrintPDF() {
+  // Đồng bộ giá trị của tất cả inputs vào thuộc tính DOM để render khi in
+  document.querySelectorAll('input, select').forEach(el => {
+    if (el.type === 'checkbox') {
+      if (el.checked) el.setAttribute('checked', '');
+      else el.removeAttribute('checked');
+    } else {
+      el.setAttribute('value', el.value);
+    }
+  });
+
+  // Tạm thời mở bung toàn bộ overflow để bảng không bị cuộn/cắt
+  const tables = document.querySelectorAll('.table-responsive');
+  tables.forEach(t => t.classList.add('print-expanded'));
+
+  showToast('Đang mở hộp thoại In / Lưu PDF (chọn Layout: Landscape / Khổ Ngang để xem đẹp nhất)...');
+  setTimeout(() => {
+    window.print();
+    tables.forEach(t => t.classList.remove('print-expanded'));
+  }, 150);
+}
+
 // --- 6. EVENT LISTENERS & WORKFLOWS ---
 function setupEventListeners() {
   UserInvalidFallback.init(document);
 
-  document.getElementById('project-title-input')?.addEventListener('input', (e) => {
-    state.projectTitle = e.target.value;
-  });
+  // 1. MODAL TẠO DỰ ÁN MỚI
+  const formNewProj = document.getElementById('form-new-project');
+  formNewProj?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nameInput = document.getElementById('new-proj-name');
+    const typeSelect = document.getElementById('new-proj-type');
+    const templateSelect = document.getElementById('new-proj-template');
 
-  document.getElementById('start-date-input')?.addEventListener('change', (e) => {
-    if (e.target.value) {
-      state.startDate = e.target.value;
-      renderAll();
-    }
-  });
+    const title = nameInput?.value?.trim() || 'Dự Án Fitout Nội Thất Mới';
+    const pType = typeSelect?.value || 'OFFICE_BUILDING';
+    const tplKey = templateSelect?.value;
 
-  document.getElementById('target-days-input')?.addEventListener('input', (e) => {
-    const d = parseInt(e.target.value, 10);
-    if (!isNaN(d) && d >= 1 && d <= 365) {
-      state.targetDays = d;
-      renderAll();
-    }
-  });
+    const typeConfig = PROJECT_TYPES[pType] || PROJECT_TYPES.OFFICE_BUILDING;
 
-  document.getElementById('weekend-mode-select')?.addEventListener('change', (e) => {
-    state.weekendMode = e.target.value;
-    renderAll();
-  });
+    state.projectTitle = title;
+    state.projectType = pType;
+    state.difficultyFactor = typeConfig.defaultDifficulty;
+    state.weekendMode = typeConfig.defaultWeekendMode;
+    state.hoursPerDay = typeConfig.defaultShift;
+    state.autoScaleCrewToTargetDays = true;
 
-  document.getElementById('difficulty-select')?.addEventListener('change', (e) => {
-    state.difficultyFactor = parseFloat(e.target.value) || 1.0;
-    renderAll();
-  });
-
-  document.getElementById('shift-select')?.addEventListener('change', (e) => {
-    state.hoursPerDay = parseInt(e.target.value, 10) || 8;
-    renderAll();
-  });
-
-  document.getElementById('auto-scale-crew')?.addEventListener('change', (e) => {
-    state.autoScaleCrewToTargetDays = e.target.checked;
-    renderAll();
-  });
-
-  // Chọn Dự án Mẫu
-  document.querySelectorAll('[data-template]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const key = e.currentTarget.getAttribute('data-template');
-      const tpl = PROJECT_TEMPLATES[key];
-      if (!tpl) return;
-      state.projectTitle = tpl.title;
+    if (tplKey && PROJECT_TEMPLATES[tplKey]) {
+      const tpl = PROJECT_TEMPLATES[tplKey];
       state.targetDays = tpl.targetDays;
-      state.difficultyFactor = tpl.difficultyFactor;
-      state.weekendMode = tpl.weekendMode || 'FULL_WITH_WEEKEND_BOOST';
-      state.autoScaleCrewToTargetDays = true;
       state.items = structuredClone(tpl.items);
-      state.executiveNote = `Đã nạp mẫu "${tpl.title}". Hệ thống đã tự động tính ngày kết thúc và phân loại các hạng mục ồn/khoan đục cần tranh thủ làm Thứ 7 - Chủ Nhật.`;
-      renderAll();
-      showToast(`Đã nạp dự án mẫu: ${tpl.title}`);
-    });
+      state.executiveNote = `Đã tạo dự án mới cho "${typeConfig.name}". Nạp khối lượng mẫu từ "${tpl.title}".`;
+    } else {
+      state.targetDays = 10;
+      state.items = [
+        { code: 'GYP-02', name: 'Thi công vách thạch cao 2 mặt', trade: 'GYPSUM', unit: 'm2', quantity: 100, productivityPerManDay: 9.0, crewSize: 3, weekendTag: 'HIGH_NOISE_WEEKEND' },
+        { code: 'PNT-01', name: 'Bả bột matit & sơn nước hoàn thiện', trade: 'PAINT', unit: 'm2', quantity: 200, productivityPerManDay: 18.0, crewSize: 3, weekendTag: 'QUIET_WEEKDAY' }
+      ];
+      state.executiveNote = `Đã khởi tạo dự án mới cho "${typeConfig.name}". Hãy bấm "Nhập khối lượng hoặc tải BOQ" để bắt đầu.`;
+    }
+
+    renderAll();
+    document.getElementById('modal-new-project')?.close();
+    showToast(`Đã tạo dự án mới: ${state.projectTitle}`);
   });
 
-  // Form Nhập Nhanh Khối Lượng Tổng
+  // 2. MODAL KHỐI 1: NHẬP KHỐI LƯỢNG TỔNG HOẶC TẢI BOQ
   const quickGridForm = document.getElementById('quick-grid-form');
   quickGridForm?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -1047,25 +1063,23 @@ function setupEventListeners() {
     }
 
     if (newItems.length === 0) {
-      showToast('Vui lòng nhập ít nhất 1 khối lượng lớn hơn 0 (VD: 100 m2 vách thạch cao).', true);
+      showToast('Vui lòng nhập ít nhất 1 khối lượng lớn hơn 0.', true);
       return;
     }
 
     const replaceMode = document.getElementById('quick-replace-checkbox')?.checked ?? true;
     if (replaceMode) {
       state.items = newItems;
-      state.projectTitle = `Dự toán Nhanh (${newItems.map(i => `${i.quantity}${i.unit} ${TRADES[i.trade].shortName}`).slice(0, 3).join(' + ')})`;
     } else {
       state.items.push(...newItems);
     }
 
     state.autoScaleCrewToTargetDays = true;
-    state.executiveNote = `Đã tính toán từ bảng Nhập Khối Lượng Tổng (${newItems.length} hạng mục). Xem ngay kế hoạch tranh thủ Thứ 7 - CN bên dưới!`;
     renderAll();
-    showToast(`Đã tính toán nhân công & lịch T7-CN cho ${newItems.length} hạng mục!`);
+    document.getElementById('modal-input-boq')?.close();
+    showToast(`Đã áp dụng ${newItems.length} hạng mục khối lượng tổng!`);
   });
 
-  // Ô Nhập Câu Tự Nhiên (Quick Natural Text / AI Prompt)
   const nlForm = document.getElementById('nl-prompt-form');
   nlForm?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -1082,9 +1096,10 @@ function setupEventListeners() {
     if (parsedItems.length > 0) {
       state.items = parsedItems;
       state.projectTitle = `Dự toán từ mô tả nhanh (${parsedItems.length} hạng mục)`;
-      state.executiveNote = `Đã bóc tách ${parsedItems.length} hạng mục và cập nhật lịch Thứ 7 - Chủ Nhật theo mô tả của khách.`;
+      state.executiveNote = `Đã bóc tách ${parsedItems.length} hạng mục từ câu nhập nhanh của Sếp.`;
       renderAll();
-      showToast(`Đã bóc tách tức thì ${parsedItems.length} hạng mục công việc!`);
+      document.getElementById('modal-input-boq')?.close();
+      showToast(`Đã bóc tách tức thì ${parsedItems.length} hạng mục!`);
     } else {
       triggerGeminiTextAnalysis(text);
     }
@@ -1105,7 +1120,6 @@ function setupEventListeners() {
     triggerGeminiTextAnalysis(text);
   });
 
-  // Upload File BOQ Excel hoặc PDF
   const fileInput = document.getElementById('boq-file-input');
   const dropZone = document.getElementById('boq-dropzone');
 
@@ -1131,6 +1145,55 @@ function setupEventListeners() {
     });
   }
 
+  // 3. MODAL KHỐI 2: THIẾT LẬP CHẾ ĐỘ LÀM VIỆC & NGÀY KHỞI CÔNG
+  const formScheduleConfig = document.getElementById('form-schedule-config');
+  formScheduleConfig?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    state.startDate = document.getElementById('m-start-date-input')?.value || state.startDate;
+    state.targetDays = parseInt(document.getElementById('m-target-days-input')?.value, 10) || state.targetDays;
+    state.weekendMode = document.getElementById('m-weekend-mode-select')?.value || state.weekendMode;
+    state.projectType = document.getElementById('m-project-type-select')?.value || state.projectType;
+    state.hoursPerDay = parseInt(document.getElementById('m-shift-select')?.value, 10) || state.hoursPerDay;
+    state.difficultyFactor = parseFloat(document.getElementById('m-difficulty-select')?.value) || state.difficultyFactor;
+    state.autoScaleCrewToTargetDays = document.getElementById('m-auto-scale-crew')?.checked ?? true;
+
+    renderAll();
+    document.getElementById('modal-schedule-config')?.close();
+    showToast('Đã lưu thiết lập tiến độ & lịch Thứ 7 - Chủ Nhật!');
+  });
+
+  // Tương tác đổi giá trị trong Modal 2 để xem trước ngày kết thúc
+  ['m-start-date-input', 'm-target-days-input', 'm-weekend-mode-select'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', () => {
+      const sDate = document.getElementById('m-start-date-input')?.value || state.startDate;
+      const tDays = parseInt(document.getElementById('m-target-days-input')?.value, 10) || state.targetDays;
+      const wMode = document.getElementById('m-weekend-mode-select')?.value || state.weekendMode;
+      const previewCal = buildProjectCalendar(sDate, tDays, wMode);
+      const mCalcSummary = document.getElementById('m-calc-date-summary');
+      if (mCalcSummary) {
+        mCalcSummary.innerHTML = `
+          <div><strong>Khởi công:</strong> ${previewCal.startDateFormatted}</div>
+          <div style="font-size:15px; font-weight:800; color:#b45309; margin-top:2px;">🏁 Bàn giao: ${previewCal.endDateFormatted} (${previewCal.totalCalendarDays} ngày theo lịch)</div>
+        `;
+      }
+    });
+  });
+
+  // Khi đổi Loại hình công trình trong Modal 2, tự động gợi ý hệ số và chế độ T7-CN
+  document.getElementById('m-project-type-select')?.addEventListener('change', (e) => {
+    const pType = e.target.value;
+    const cfg = PROJECT_TYPES[pType];
+    if (cfg) {
+      const diffSel = document.getElementById('m-difficulty-select');
+      if (diffSel) diffSel.value = String(cfg.defaultDifficulty);
+      const wkSel = document.getElementById('m-weekend-mode-select');
+      if (wkSel) wkSel.value = cfg.defaultWeekendMode;
+      const shiftSel = document.getElementById('m-shift-select');
+      if (shiftSel) shiftSel.value = String(cfg.defaultShift);
+    }
+  });
+
+  // 4. CÁC NÚT THAO TÁC KHÁC
   document.getElementById('btn-add-blank-row')?.addEventListener('click', () => {
     state.items.push({
       code: 'GYP-02',
@@ -1164,7 +1227,7 @@ function setupEventListeners() {
   });
 
   document.getElementById('btn-print-report')?.addEventListener('click', () => {
-    window.print();
+    handlePrintPDF();
   });
 
   const apiKeyForm = document.getElementById('api-key-form');
@@ -1191,6 +1254,7 @@ async function triggerGeminiTextAnalysis(text) {
       if (aiRes.executiveNote) state.executiveNote = `✨ Gemini AI QS: ${aiRes.executiveNote}`;
       state.autoScaleCrewToTargetDays = true;
       renderAll();
+      document.getElementById('modal-input-boq')?.close();
       showToast(`Gemini AI đã bóc tách thành công ${aiRes.items.length} hạng mục công việc!`);
     } else {
       showToast('AI không tìm thấy hạng mục khối lượng nào rõ ràng.', true);
@@ -1215,8 +1279,9 @@ async function handleUploadedBOQFile(file) {
         state.items = items;
         state.projectTitle = `BOQ: ${file.name.replace(/\.[^.]+$/, '')}`;
         state.autoScaleCrewToTargetDays = true;
-        state.executiveNote = `Đã bóc tách tự động ${items.length} hạng mục từ file "${file.name}" và gán nhãn lưu ý làm Thứ 7 - Chủ Nhật trong tòa nhà.`;
+        state.executiveNote = `Đã bóc tách tự động ${items.length} hạng mục từ file "${file.name}" và phân loại việc Thứ 7 - CN.`;
         renderAll();
+        document.getElementById('modal-input-boq')?.close();
         showToast(`Đã đọc thành công ${items.length} hạng mục từ file Excel "${file.name}"!`);
       } else if (rawText) {
         await triggerGeminiTextAnalysis(`Hãy bóc tách bảng BOQ sau từ file ${file.name}:\n${rawText}`);
@@ -1240,6 +1305,7 @@ async function handleUploadedBOQFile(file) {
         state.executiveNote = aiRes.executiveNote || `Đã trích xuất ${aiRes.items.length} hạng mục từ file PDF "${file.name}" bằng Gemini AI.`;
         state.autoScaleCrewToTargetDays = true;
         renderAll();
+        document.getElementById('modal-input-boq')?.close();
         showToast(`Đã bóc tách ${aiRes.items.length} hạng mục từ PDF "${file.name}"!`);
       } else {
         showToast('Không tìm thấy bảng khối lượng trong file PDF.', true);
