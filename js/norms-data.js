@@ -467,6 +467,39 @@ export const LABOR_NORMS = [
     note: 'Cúp điện đấu nguồn tổng tòa nhà vào chiều T7 hoặc Chủ Nhật'
   },
   {
+    code: 'MEP-07',
+    name: 'Bấm đầu hạt mạng, patch panel & test thông tín hiệu (Note mạng)',
+    trade: 'MEP',
+    unit: 'node',
+    productivityPerManDay: 25.0,
+    defaultCrewSize: 2,
+    weekendTag: 'QUIET_WEEKDAY',
+    keywords: ['note mang', 'nut mang', 'dau mang', 'hat mang', 'patch panel', 'keo mang', 'lan'],
+    note: 'Bấm đầu & test đường truyền êm, làm T2-T6'
+  },
+  {
+    code: 'MEP-08',
+    name: 'Lắp ráp tủ Rack mạng (Server Rack), đi dây patch cord & cố định thiết bị',
+    trade: 'MEP',
+    unit: 'tủ',
+    productivityPerManDay: 1.5,
+    defaultCrewSize: 2,
+    weekendTag: 'QUIET_WEEKDAY',
+    keywords: ['tu rack', 'rack mạng', 'server rack', 'lap tu rack', 'thiet bi rack', 'tu server'],
+    note: 'Cố định tủ & đấu nối thiết bị bên trong, làm T2-T6'
+  },
+  {
+    code: 'MEP-09',
+    name: 'Lắp đặt đèn thả trang trí, chao đèn decor nghệ thuật',
+    trade: 'MEP',
+    unit: 'bộ',
+    productivityPerManDay: 6.0,
+    defaultCrewSize: 2,
+    weekendTag: 'QUIET_WEEKDAY',
+    keywords: ['den trang tri', 'den tha', 'den decor', 'chao den', 'den chùm'],
+    note: 'Căn chỉnh độ cao ty treo & đấu nguồn êm, làm T2-T6'
+  },
+  {
     code: 'FLR-01',
     name: 'Lắp đặt sàn gỗ công nghiệp lát thẳng (kèm xốp lót)',
     trade: 'FLOOR',

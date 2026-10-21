@@ -156,13 +156,68 @@ export function matchLaborNorm(taskName, unitHint = '') {
       matchedNormName: 'Ốp lát / Xây tô hoàn thiện'
     };
   }
-  if (normTask.includes('dien') || normTask.includes('den') || normTask.includes('day') || normTask.includes('o cam') || normTask.includes('nuoc') || normTask.includes('dieu hoa') || normTask.includes('mep')) {
+  if (normTask.includes('dien') || normTask.includes('den') || normTask.includes('day') || normTask.includes('o cam') || normTask.includes('nuoc') || normTask.includes('dieu hoa') || normTask.includes('mep') || normTask.includes('mang') || normTask.includes('rack') || normTask.includes('lan')) {
+    if (normTask.includes('tu rack') || normTask.includes('rack')) {
+      return {
+        code: 'MEP-08',
+        trade: 'MEP',
+        unit: unitHint || 'tủ',
+        productivityPerManDay: 1.5,
+        crewSize: 2,
+        weekendTag: 'QUIET_WEEKDAY',
+        matchedNormName: 'Lắp ráp tủ Rack & thiết bị'
+      };
+    }
+    if (normTask.includes('note') || normTask.includes('nut mang') || normTask.includes('hat mang') || normTask.includes('patch')) {
+      return {
+        code: 'MEP-07',
+        trade: 'MEP',
+        unit: unitHint || 'node',
+        productivityPerManDay: 25.0,
+        crewSize: 2,
+        weekendTag: 'QUIET_WEEKDAY',
+        matchedNormName: 'Đấu nối Note mạng / LAN'
+      };
+    }
+    if (normTask.includes('trang tri') || normTask.includes('den tha') || normTask.includes('decor')) {
+      return {
+        code: 'MEP-09',
+        trade: 'MEP',
+        unit: unitHint || 'bộ',
+        productivityPerManDay: 6.0,
+        crewSize: 2,
+        weekendTag: 'QUIET_WEEKDAY',
+        matchedNormName: 'Lắp đặt đèn thả trang trí'
+      };
+    }
+    if (normTask.includes('o cam') || normTask.includes('cong tac') || normTask.includes('mat hat')) {
+      return {
+        code: 'MEP-05',
+        trade: 'MEP',
+        unit: unitHint || 'cái',
+        productivityPerManDay: 18.0,
+        crewSize: 2,
+        weekendTag: 'QUIET_WEEKDAY',
+        matchedNormName: 'Lắp đặt ổ cắm / công tắc'
+      };
+    }
+    if (normTask.includes('den') || normTask.includes('downlight') || normTask.includes('spotlight') || normTask.includes('panel')) {
+      return {
+        code: 'MEP-03',
+        trade: 'MEP',
+        unit: unitHint || 'bộ',
+        productivityPerManDay: 20.0,
+        crewSize: 2,
+        weekendTag: 'QUIET_WEEKDAY',
+        matchedNormName: 'Lắp đặt đèn âm trần / panel'
+      };
+    }
     const isNoisyMEP = normTask.includes('cat') || normTask.includes('duc') || normTask.includes('ong dong') || normTask.includes('tu dien') || normTask.includes('he thong');
     return {
       code: isNoisyMEP ? 'MEP-01' : 'MEP-03',
       trade: 'MEP',
       unit: unitHint || 'bộ',
-      productivityPerManDay: 12.0,
+      productivityPerManDay: isNoisyMEP ? 8.0 : 15.0,
       crewSize: 2,
       weekendTag: isNoisyMEP ? 'HIGH_NOISE_WEEKEND' : 'QUIET_WEEKDAY',
       matchedNormName: 'Thi công lắp đặt MEP'
