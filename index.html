@@ -392,7 +392,7 @@
           </form>
         </div>
 
-        <!-- Cột Phải: Upload file BOQ Excel / PDF & AI Prompt -->
+        <!-- Cột Phải: Upload file BOQ Excel / PDF & Lựa chọn phân tích -->
         <div>
           <div style="font-weight:800; color:#0369a1; margin-bottom:8px; font-size:13.5px;">
             📂 Cách 2: Tải lên file BOQ Excel hoặc PDF:
@@ -400,11 +400,27 @@
           <div id="boq-dropzone" class="boq-dropzone">
             <div class="dropzone-icon" aria-hidden="true">📊</div>
             <p class="dropzone-title">Kéo thả file Excel (.xlsx, .xls, .csv) hoặc PDF (.pdf)</p>
-            <p class="dropzone-sub">Tự động nhận diện cột Hạng mục, ĐVT, Khối lượng & Tổ đội thợ</p>
+            <p class="dropzone-sub">Chọn file trước, sau đó sếp có thể chọn bóc tách regex hoặc phân tích bằng Gemini AI</p>
             <label for="boq-file-input" class="btn-primary btn-sm" style="cursor:pointer; display:inline-block;">
               📤 Chọn File Từ Máy Tính
             </label>
             <input type="file" id="boq-file-input" accept=".xlsx,.xls,.csv,.pdf" hidden />
+          </div>
+
+          <!-- Khu vực hiển thị file đã chọn kèm 2 nút tùy chọn rõ ràng -->
+          <div id="boq-file-ready-bar" style="display:none; margin-top:10px; padding:10px 14px; background:#eff6ff; border:1px solid #93c5fd; border-radius:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span id="boq-selected-filename" style="font-weight:700; color:#0f4c81; font-size:13px;">📄 Chưa có file</span>
+              <button type="button" id="btn-remove-selected-file" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer;">✕ Đổi file</button>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" id="btn-process-file-instant" class="btn-primary btn-sm" style="flex:1; justify-content:center;">
+                ⚡ Bóc Tách Bảng Tính
+              </button>
+              <button type="button" id="btn-process-file-ai" class="btn-hero-accent btn-sm" style="flex:1.3; justify-content:center; color:#fff; font-weight:800;">
+                ✨ Gemini AI Phân Tích File
+              </button>
+            </div>
           </div>
 
           <form id="nl-prompt-form" novalidate style="margin-top:12px;">

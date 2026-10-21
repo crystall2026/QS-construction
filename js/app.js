@@ -216,6 +216,9 @@ function buildProjectCalendar(startDateISO, targetWorkingDays, weekendMode) {
 }
 
 // --- 3. APPLICATION STATE ---
+let stagedBOQFile = null;
+let clearStagedFile = () => {};
+
 const state = {
   hasProject: false,
   projectTitle: 'Chưa có dự án thi công',
@@ -1295,11 +1298,34 @@ function setupEventListeners() {
 
   const fileInput = document.getElementById('boq-file-input');
   const dropZone = document.getElementById('boq-dropzone');
+  const fileReadyBar = document.getElementById('boq-file-ready-bar');
+  const selectedFilenameEl = document.getElementById('boq-selected-filename');
+  const btnRemoveFile = document.getElementById('btn-remove-selected-file');
+  const btnProcessInstant = document.getElementById('btn-process-file-instant');
+  const btnProcessAI = document.getElementById('btn-process-file-ai');
 
-  fileInput?.addEventListener('change', async (e) => {
+  function stageFile(file) {
+    if (!file) return;
+    stagedBOQFile = file;
+    if (selectedFilenameEl) {
+      const sizeKB = (file.size / 1024).toFixed(1);
+      selectedFilenameEl.textContent = `📄 ${file.name} (${sizeKB} KB)`;
+    }
+    if (fileReadyBar) {
+      fileReadyBar.style.display = 'block';
+    }
+    showToast(`Đã chọn "${file.name}". Bấm [⚡ Bóc Tách Bảng Tính] hoặc [✨ Gemini AI Phân Tích File]!`);
+  }
+
+  clearStagedFile = function() {
+    stagedBOQFile = null;
+    if (fileReadyBar) fileReadyBar.style.display = 'none';
+    if (fileInput) fileInput.value = '';
+  };
+
+  fileInput?.addEventListener('change', (e) => {
     const file = e.target.files?.[0];
-    if (file) await handleUploadedBOQFile(file);
-    fileInput.value = '';
+    if (file) stageFile(file);
   });
 
   if (dropZone) {
@@ -1310,13 +1336,33 @@ function setupEventListeners() {
     dropZone.addEventListener('dragleave', () => {
       dropZone.classList.remove('drag-active');
     });
-    dropZone.addEventListener('drop', async (e) => {
+    dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
       dropZone.classList.remove('drag-active');
       const file = e.dataTransfer?.files?.[0];
-      if (file) await handleUploadedBOQFile(file);
+      if (file) stageFile(file);
     });
   }
+
+  btnRemoveFile?.addEventListener('click', () => {
+    clearStagedFile();
+  });
+
+  btnProcessInstant?.addEventListener('click', async () => {
+    if (!stagedBOQFile) {
+      showToast('Vui lòng chọn hoặc kéo thả file BOQ trước.', true);
+      return;
+    }
+    await handleUploadedBOQFile(stagedBOQFile, { forceAI: false });
+  });
+
+  btnProcessAI?.addEventListener('click', async () => {
+    if (!stagedBOQFile) {
+      showToast('Vui lòng chọn hoặc kéo thả file BOQ trước.', true);
+      return;
+    }
+    await handleUploadedBOQFile(stagedBOQFile, { forceAI: true });
+  });
 
   // 3. MODAL KHỐI 2: THIẾT LẬP CHẾ ĐỘ LÀM VIỆC & NGÀY KHỞI CÔNG
   const formScheduleConfig = document.getElementById('form-schedule-config');
@@ -1582,10 +1628,32 @@ async function triggerGeminiTextAnalysis(text) {
   }
 }
 
-async function handleUploadedBOQFile(file) {
+async function handleUploadedBOQFile(file, options = { forceAI: false }) {
   const ext = file.name.split('.').pop().toLowerCase();
   try {
     if (['xlsx', 'xls', 'csv'].includes(ext)) {
+      if (options.forceAI) {
+        setLoadingStatus(true, `Đang đọc nội dung file Excel "${file.name}" và gửi Gemini AI phân tích chuyên sâu...`);
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = window.XLSX.read(arrayBuffer, { type: 'array' });
+        const allSheetLines = [];
+        for (const sheetName of workbook.SheetNames) {
+          const sheet = workbook.Sheets[sheetName];
+          const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+          allSheetLines.push(`=== BẢNG / PHÂN ĐOẠN: ${sheetName} ===`);
+          for (const row of rows) {
+            const rowStr = row.map(c => String(c ?? '').trim()).filter(Boolean).join(' | ');
+            if (rowStr) allSheetLines.push(rowStr);
+          }
+        }
+        const fullContent = allSheetLines.slice(0, 300).join('\n');
+        await triggerGeminiTextAnalysis(
+          `Bóc tách dự toán nội thất từ file Excel "${file.name}". Bỏ qua hoàn toàn các mục điều hòa/lạnh và PCCC của thầu phụ. Phân biệt đồ mộc gia công sẵn ở xưởng với lắp đặt công trình, và tách riêng thợ phụ bốc xếp logistics:\n\n${fullContent}`
+        );
+        clearStagedFile();
+        return;
+      }
+
       setLoadingStatus(true, `Đang đọc bảng BOQ Excel "${file.name}"...`);
       const { items, rawText } = await parseExcelBOQFile(file);
       state.lastUploadedRawText = rawText;
@@ -1598,9 +1666,11 @@ async function handleUploadedBOQFile(file) {
         state.executiveNote = `Đã bóc tách tự động ${items.length} hạng mục từ file "${file.name}" và phân loại việc Thứ 7 - CN.`;
         renderAll();
         document.getElementById('modal-input-boq')?.close();
-        showToast(`Đã đọc thành công ${items.length} hạng mục từ file Excel "${file.name}"!`);
+        clearStagedFile();
+        showToast(`Đã bóc tách thành công ${items.length} hạng mục từ file Excel "${file.name}"!`);
       } else if (rawText) {
         await triggerGeminiTextAnalysis(`Hãy bóc tách bảng BOQ sau từ file ${file.name}:\n${rawText}`);
+        clearStagedFile();
       } else {
         showToast('Không tìm thấy dữ liệu hợp lệ trong file Excel.', true);
       }
@@ -1608,7 +1678,7 @@ async function handleUploadedBOQFile(file) {
       setLoadingStatus(true, `Đang gửi file PDF "${file.name}" tới Google Gemini AI để đọc bảng BOQ...`);
       const base64Data = await fileToBase64(file);
       const aiRes = await analyzeWithGeminiAI({
-        textContent: `Đọc bảng BOQ từ file PDF "${file.name}" và trích xuất toàn bộ các hạng mục công việc kèm khối lượng, đơn vị, tổ đội, định mức nhân công và phân loại việc cần làm Thứ 7 - CN.`,
+        textContent: `Đọc bảng BOQ từ file PDF "${file.name}" và trích xuất toàn bộ các hạng mục công việc nội thất Fitout, loại trừ điều hòa lạnh và PCCC, phân định thợ mộc lắp đặt và thợ phụ bốc xếp.`,
         pdfBase64: base64Data
       });
       if (aiRes?.items?.length > 0) {
@@ -1623,6 +1693,7 @@ async function handleUploadedBOQFile(file) {
         state.autoScaleCrewToTargetDays = true;
         renderAll();
         document.getElementById('modal-input-boq')?.close();
+        clearStagedFile();
         showToast(`Đã bóc tách ${aiRes.items.length} hạng mục từ PDF "${file.name}"!`);
       } else {
         showToast('Không tìm thấy bảng khối lượng trong file PDF.', true);

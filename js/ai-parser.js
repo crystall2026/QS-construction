@@ -216,7 +216,7 @@ export function matchLaborNorm(taskName, unitHint = '') {
         code: 'MEP-08',
         trade: 'MEP',
         unit: unitHint || 'tủ',
-        productivityPerManDay: 1.5,
+        productivityPerManDay: 2.5,
         crewSize: 2,
         weekendTag: 'QUIET_WEEKDAY',
         matchedNormName: 'Lắp ráp tủ Rack & thiết bị'
@@ -227,18 +227,29 @@ export function matchLaborNorm(taskName, unitHint = '') {
         code: 'MEP-07',
         trade: 'MEP',
         unit: unitHint || 'node',
-        productivityPerManDay: 25.0,
+        productivityPerManDay: 35.0,
         crewSize: 2,
         weekendTag: 'QUIET_WEEKDAY',
         matchedNormName: 'Đấu nối Note mạng / LAN'
       };
     }
-    if (normTask.includes('trang tri') || normTask.includes('den tha') || normTask.includes('decor')) {
+    if (normTask.includes('led day') || normTask.includes('day led') || normTask.includes('nhom dinh hinh') || normTask.includes('led cuon') || normTask.includes('led dan') || normTask.includes('led thanh')) {
+      return {
+        code: 'MEP-04',
+        trade: 'MEP',
+        unit: unitHint || 'md',
+        productivityPerManDay: 24.0,
+        crewSize: 2,
+        weekendTag: 'QUIET_WEEKDAY',
+        matchedNormName: 'Dán & đấu nối đèn LED dây / thanh nhôm'
+      };
+    }
+    if (normTask.includes('trang tri') || normTask.includes('den tha') || normTask.includes('decor') || normTask.includes('chao den')) {
       return {
         code: 'MEP-09',
         trade: 'MEP',
         unit: unitHint || 'bộ',
-        productivityPerManDay: 6.0,
+        productivityPerManDay: 8.5,
         crewSize: 2,
         weekendTag: 'QUIET_WEEKDAY',
         matchedNormName: 'Lắp đặt đèn thả trang trí'
@@ -250,30 +261,30 @@ export function matchLaborNorm(taskName, unitHint = '') {
         code: isPackagedOutlet ? 'MEP-11' : 'MEP-05',
         trade: 'MEP',
         unit: unitHint || (isPackagedOutlet ? 'điểm' : 'cái'),
-        productivityPerManDay: isPackagedOutlet ? 6.0 : 18.0,
+        productivityPerManDay: isPackagedOutlet ? 8.5 : 26.0,
         crewSize: 2,
         weekendTag: isPackagedOutlet ? 'HIGH_NOISE_WEEKEND' : 'QUIET_WEEKDAY',
         matchedNormName: isPackagedOutlet ? 'Lắp đặt ổ cắm/ổ mạng (gồm cắt đục & dây ống)' : 'Lắp đặt công tắc / ổ cắm / mặt hạt'
       };
     }
     if (normTask.includes('den') || normTask.includes('downlight') || normTask.includes('spotlight') || normTask.includes('panel')) {
-      const isPackageWithWire = normTask.includes('day') || normTask.includes('ong') || normTask.includes('bao gom') || normTask.includes('kem');
+      const isPackageWithWire = (normTask.includes('day') && !normTask.includes('led')) || normTask.includes('ong') || normTask.includes('bao gom') || normTask.includes('kem');
       return {
         code: isPackageWithWire ? 'MEP-10' : 'MEP-03',
         trade: 'MEP',
         unit: unitHint || 'bộ',
-        productivityPerManDay: isPackageWithWire ? 5.5 : 20.0,
+        productivityPerManDay: isPackageWithWire ? 8.0 : 26.0,
         crewSize: 2,
         weekendTag: 'QUIET_WEEKDAY',
         matchedNormName: isPackageWithWire ? 'Lắp đặt đèn (bao gồm dây ống)' : 'Lắp đặt đèn âm trần / panel'
       };
     }
-    const isNoisyMEP = normTask.includes('cat') || normTask.includes('duc') || normTask.includes('ong dong') || normTask.includes('tu dien') || normTask.includes('he thong');
+    const isNoisyMEP = normTask.includes('cat') || normTask.includes('duc') || normTask.includes('tu dien') || normTask.includes('he thong');
     return {
       code: isNoisyMEP ? 'MEP-01' : 'MEP-03',
       trade: 'MEP',
       unit: unitHint || 'bộ',
-      productivityPerManDay: isNoisyMEP ? 8.0 : 15.0,
+      productivityPerManDay: isNoisyMEP ? 12.0 : 26.0,
       crewSize: 2,
       weekendTag: isNoisyMEP ? 'HIGH_NOISE_WEEKEND' : 'QUIET_WEEKDAY',
       matchedNormName: 'Thi công lắp đặt MEP'
@@ -282,10 +293,10 @@ export function matchLaborNorm(taskName, unitHint = '') {
   if (normTask.includes('san go') || normTask.includes('vinyl') || normTask.includes('spc') || normTask.includes('tham')) {
     const isGlueFloor = normTask.includes('vinyl') || normTask.includes('tham') || normTask.includes('dan');
     return {
-      code: 'FLR-01',
+      code: isGlueFloor ? 'FLR-03' : 'FLR-01',
       trade: 'FLOOR',
       unit: unitHint || 'm2',
-      productivityPerManDay: 25.0,
+      productivityPerManDay: isGlueFloor ? 42.0 : 32.0,
       crewSize: 2,
       weekendTag: isGlueFloor ? 'LIFT_SMELL_WEEKEND' : 'QUIET_WEEKDAY',
       matchedNormName: 'Thi công sàn gỗ / thảm'
@@ -297,32 +308,113 @@ export function matchLaborNorm(taskName, unitHint = '') {
       code: isClean ? 'FUR-07' : 'DEMO-01',
       trade: 'DEMO',
       unit: unitHint || 'm2',
-      productivityPerManDay: 25.0,
+      productivityPerManDay: isClean ? 40.0 : 25.0,
       crewSize: 2,
       weekendTag: isClean ? 'QUIET_WEEKDAY' : 'HIGH_NOISE_WEEKEND',
       matchedNormName: 'Tháo dỡ / Vệ sinh công nghiệp'
     };
   }
 
-  if (normTask.includes('boc xep') || normTask.includes('boc vac') || normTask.includes('khuan vac') || normTask.includes('tho phu') || normTask.includes('van chuyen noi that')) {
+  if (normTask.includes('boc xep') || normTask.includes('boc vac') || normTask.includes('khuan vac') || normTask.includes('tho phu') || normTask.includes('van chuyen noi that') || normTask.includes('chuyen thang hang')) {
     return {
       code: 'LOG-01',
       trade: 'LOGISTICS',
-      unit: unitHint || 'công',
-      productivityPerManDay: 1.0,
+      unit: unitHint || 'chuyến',
+      productivityPerManDay: 2.5,
       crewSize: 2,
       weekendTag: 'LIFT_SMELL_WEEKEND',
       matchedNormName: 'Bốc xếp vận chuyển nội thất'
     };
   }
 
+  // Khối nhận diện chuyên sâu Đồ Mộc & Nội Thất Fitout lắp đặt tại công trình
+  if (normTask.includes('ghe') || normTask.includes('xoay') || normTask.includes('chan quy')) {
+    return {
+      code: 'FUR-08',
+      trade: 'FURNITURE',
+      unit: unitHint || 'cái',
+      productivityPerManDay: 30.0,
+      crewSize: 2,
+      weekendTag: 'QUIET_WEEKDAY',
+      matchedNormName: 'Lắp ráp ghế xoay / ghế văn phòng'
+    };
+  }
+  if (normTask.includes('vach ngan ban') || normTask.includes('vach ban') || normTask.includes('ke vach')) {
+    return {
+      code: 'FUR-09',
+      trade: 'FURNITURE',
+      unit: unitHint || 'tấm',
+      productivityPerManDay: 18.0,
+      crewSize: 2,
+      weekendTag: 'QUIET_WEEKDAY',
+      matchedNormName: 'Lắp đặt vách ngăn bàn làm việc'
+    };
+  }
+  if (normTask.includes('hoc di dong') || normTask.includes('pedestal') || normTask.includes('ke cpu') || normTask.includes('hoc tu')) {
+    return {
+      code: 'FUR-10',
+      trade: 'FURNITURE',
+      unit: unitHint || 'cái',
+      productivityPerManDay: 20.0,
+      crewSize: 2,
+      weekendTag: 'QUIET_WEEKDAY',
+      matchedNormName: 'Lắp đặt hộc di động 3 ngăn'
+    };
+  }
+  if (normTask.includes('ban lam viec') || normTask.includes('ban hop') || normTask.includes('ban giam doc') || normTask.includes('cum ban')) {
+    return {
+      code: 'FUR-06',
+      trade: 'FURNITURE',
+      unit: unitHint || 'cái',
+      productivityPerManDay: 12.0,
+      crewSize: 2,
+      weekendTag: 'QUIET_WEEKDAY',
+      matchedNormName: 'Lắp đặt & kê bàn làm việc / bàn họp'
+    };
+  }
+  if (normTask.includes('tu bep')) {
+    return {
+      code: 'FUR-01',
+      trade: 'FURNITURE',
+      unit: unitHint || 'md',
+      productivityPerManDay: 7.0,
+      crewSize: 2,
+      weekendTag: 'LIFT_SMELL_WEEKEND',
+      matchedNormName: 'Lắp ráp tủ bếp module'
+    };
+  }
+  if (normTask.includes('tu ao') || normTask.includes('tu ho so') || normTask.includes('tu locker') || normTask.includes('tu am tuong')) {
+    return {
+      code: 'FUR-02',
+      trade: 'FURNITURE',
+      unit: unitHint || 'm2',
+      productivityPerManDay: 12.0,
+      crewSize: 2,
+      weekendTag: 'LIFT_SMELL_WEEKEND',
+      matchedNormName: 'Lắp ráp tủ áo / tủ hồ sơ kịch trần'
+    };
+  }
+  if (normTask.includes('cua go') || normTask.includes('cua composite') || normTask.includes('cua phong')) {
+    return {
+      code: 'FUR-04',
+      trade: 'FURNITURE',
+      unit: unitHint || 'bộ',
+      productivityPerManDay: 5.5,
+      crewSize: 2,
+      weekendTag: 'QUIET_WEEKDAY',
+      matchedNormName: 'Lắp dựng cửa gỗ công nghiệp'
+    };
+  }
+
+  const isUnitCount = /^(cái|cai|bộ|bo|chiếc|chiec|tấm|tam)$/i.test(unitHint);
+  const isUnitLength = /^(md|m|mét|met)$/i.test(unitHint);
   return {
-    code: 'FUR-03',
+    code: isUnitCount ? 'FUR-06' : (isUnitLength ? 'FUR-01' : 'FUR-03'),
     trade: 'FURNITURE',
     unit: unitHint || 'm2',
-    productivityPerManDay: 5.5,
+    productivityPerManDay: isUnitCount ? 14.0 : (isUnitLength ? 18.0 : 14.0),
     crewSize: 2,
-    weekendTag: 'LIFT_SMELL_WEEKEND',
+    weekendTag: 'QUIET_WEEKDAY',
     matchedNormName: 'Lắp ráp hoàn thiện nội thất Fitout'
   };
 }
@@ -376,28 +468,40 @@ export async function analyzeWithGeminiAI({ textContent, pdfBase64 = null }) {
   // Prompt chuyên sâu chuẩn QS Fitout: Loại bỏ thầu phụ Điều hòa/Lạnh & PCCC, bóc tách chính xác thiết bị gộp
   const compactSystemPrompt = `Bạn là Chuyên gia QS Fitout & Nội thất Crystal Interior.
 NHIỆM VỤ QUAN TRỌNG:
-1. LOẠI BỎ HOÀN TOÀN các hạng mục của THẦU PHỤ:
+1. LOẠI BỎ HOÀN TOÀN các hạng mục của THẦU PHỤ (Không tính công và không đưa vào items):
    - Hệ thống Điều hòa không khí/Lạnh (HVAC, VRV, FCU, miệng gió, ống gió, ống đồng, máy lạnh...).
    - Hệ thống PCCC (đầu phun sprinkler, báo khói, báo cháy, cuộn vòi, bình chữa cháy...).
    - Thang máy, máy phát điện.
-   (Không tính công và không đưa vào danh sách items).
-2. XỬ LÝ HẠNG MỤC GỘP & CHIA NHỎ:
-   - Đèn trần chỉ lắp ráp: 20 bộ/công. Đèn gộp cả dây ống: 5.5 bộ/công. Đèn thả decor: 6 bộ/công.
-   - Ổ cắm/công tắc chỉ đấu mặt hạt: 18 cái/công. Ổ cắm/mạng gộp cả cắt đục & dây ống: 6 điểm/công.
-   - Node mạng LAN: 25 node/công. Tủ Rack mạng: 1.5 tủ/công.
+2. XỬ LÝ HẠNG MỤC GỘP & CHIA NHỎ THEO NĂNG SUẤT FITOUT THỰC TẾ:
+   - Đèn trần khoét lỗ lắp đặt: 26 bộ/công. Đèn gộp cả dây ống: 8 bộ/công. Đèn thả decor: 8.5 bộ/công.
+   - LED dây / thanh nhôm hắt trần: 24 md/công.
+   - Ổ cắm/công tắc chỉ đấu mặt hạt: 26 cái/công. Ổ cắm/mạng gộp cả cắt đục & dây ống: 8.5 điểm/công.
+   - Node mạng LAN: 35 node/công. Tủ Rack mạng: 2.5 tủ/công.
 3. PHÂN ĐỊNH THỢ MỘC & THỢ PHỤ BỐC XẾP:
-   - Hàng mộc nội thất (tủ, bàn, vách ốp) đã gia công ở xưởng, ở công trình CHỈ TÍNH CÔNG LẮP RÁP HOÀN THIỆN (Trade: FURNITURE, 680k/công).
-   - Nếu có công tác khuân vác, bốc xếp kiện gỗ từ xe tải qua thang hàng, vận chuyển vật tư nặng hoặc thợ phụ bưng bê thì tách riêng thành Tổ Thợ Phụ Bốc Xếp (Trade: LOGISTICS, 420k/công).
-4. Trades hợp lệ: DEMO, MASON, GYPSUM, MEP, PAINT, FLOOR, FURNITURE, LOGISTICS.
+   - Đồ gỗ nội thất (tủ, bàn, vách ốp) đã gia công ở xưởng chuyển tới công trường, ở công trình CHỈ TÍNH CÔNG LẮP RÁP HOÀN THIỆN (Trade: FURNITURE, 680k/công).
+     + Ghế xoay / ghế văn phòng / ghế ăn: 30 cái/công (chỉ khui thùng lắp ráp bánh xe/ben).
+     + Bàn làm việc / bàn họp / bàn ăn: 12 cái/công.
+     + Hộc di động (Pedestal) / kệ CPU: 20 cái/công.
+     + Vách ngăn bàn làm việc: 18 tấm/công.
+     + Tủ áo / tủ hồ sơ / tủ locker kịch trần: 12 m2/công.
+     + Tủ bếp module: 7 md/công.
+     + Vách ốp gỗ, lam sóng: 14 m2/công.
+     + Cửa gỗ / cửa composite: 5.5 bộ/công.
+   - Nếu có công tác khuân vác, bốc xếp kiện gỗ từ xe tải qua thang hàng, vận chuyển vật tư nặng hoặc thợ phụ bưng bê thì tách riêng thành Tổ Thợ Phụ Bốc Xếp (Trade: LOGISTICS, 420k/công, 2.5 chuyến/công).
+4. SƠN & THẠCH CAO & SÀN:
+   - Sơn nước tường/trần: 25 m2/công.
+   - Trần/vách thạch cao: 14 m2/công. Trần thả 600x600: 25 m2/công.
+   - Sàn gỗ / thảm tấm / vinyl: 35-42 m2/công.
+5. Trades hợp lệ: DEMO, MASON, GYPSUM, MEP, PAINT, FLOOR, FURNITURE, LOGISTICS.
 WeekendTags: HIGH_NOISE_WEEKEND (việc ồn), LIFT_SMELL_WEEKEND (mùi/thang tải), QUIET_WEEKDAY (việc êm làm T2-T6).
 
 Trả về JSON duy nhất:
 {
   "projectTitle": "Tên dự án ngắn gọn",
-  "recommendedTargetDays": 12,
+  "recommendedTargetDays": 14,
   "weekendMode": "WEEKEND_NOISY_FOCUS",
   "items": [
-    {"name": "Tên việc", "trade": "MEP", "unit": "bộ", "quantity": 45, "productivityPerManDay": 5.5, "crewSize": 2, "weekendTag": "QUIET_WEEKDAY"}
+    {"name": "Tên việc", "trade": "MEP", "unit": "bộ", "quantity": 45, "productivityPerManDay": 8.0, "crewSize": 2, "weekendTag": "QUIET_WEEKDAY"}
   ]
 }`;
 
@@ -408,10 +512,15 @@ Trả về JSON duy nhất:
     });
   }
   parts.push({
-    text: (textContent || 'Bóc tách BOQ').slice(0, 4000)
+    text: (textContent || 'Bóc tách BOQ').slice(0, 20000)
   });
 
-  const modelsToTry = ['models/gemini-flash-latest', 'models/gemini-3.8-flash'];
+  const modelsToTry = [
+    'models/gemini-2.5-flash',
+    'models/gemini-2.0-flash',
+    'models/gemini-1.5-flash',
+    'models/gemini-flash-latest'
+  ];
   let lastError = null;
 
   for (const modelName of modelsToTry) {
@@ -425,7 +534,7 @@ Trả về JSON duy nhất:
           contents: [{ role: 'user', parts }],
           generationConfig: {
             temperature: 0.1,
-            maxOutputTokens: 1200,
+            maxOutputTokens: 4000,
             responseMimeType: 'application/json'
           }
         })
