@@ -500,6 +500,17 @@ export const LABOR_NORMS = [
     note: 'Căn chỉnh độ cao ty treo & đấu nguồn êm, làm T2-T6'
   },
   {
+    code: 'MEP-10',
+    name: 'Cung cấp & lắp đặt đèn trọn gói (bao gồm đi ống, luồn dây & đấu nối hoàn thiện)',
+    trade: 'MEP',
+    unit: 'bộ',
+    productivityPerManDay: 5.5,
+    defaultCrewSize: 2,
+    weekendTag: 'QUIET_WEEKDAY',
+    keywords: ['bao gom day ong', 'kem day ong', 'day ong dien', 'tron goi den', 'cung cap va lap dat den'],
+    note: 'Đã gồm công đi ống luồn dây trên trần & đấu nối đèn hoàn thiện (5.5 bộ/công)'
+  },
+  {
     code: 'FLR-01',
     name: 'Lắp đặt sàn gỗ công nghiệp lát thẳng (kèm xốp lót)',
     trade: 'FLOOR',

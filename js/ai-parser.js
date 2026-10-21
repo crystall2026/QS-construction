@@ -202,14 +202,15 @@ export function matchLaborNorm(taskName, unitHint = '') {
       };
     }
     if (normTask.includes('den') || normTask.includes('downlight') || normTask.includes('spotlight') || normTask.includes('panel')) {
+      const isPackageWithWire = normTask.includes('day') || normTask.includes('ong') || normTask.includes('bao gom') || normTask.includes('kem');
       return {
-        code: 'MEP-03',
+        code: isPackageWithWire ? 'MEP-10' : 'MEP-03',
         trade: 'MEP',
         unit: unitHint || 'bộ',
-        productivityPerManDay: 20.0,
+        productivityPerManDay: isPackageWithWire ? 5.5 : 20.0,
         crewSize: 2,
         weekendTag: 'QUIET_WEEKDAY',
-        matchedNormName: 'Lắp đặt đèn âm trần / panel'
+        matchedNormName: isPackageWithWire ? 'Lắp đặt đèn (bao gồm dây ống)' : 'Lắp đặt đèn âm trần / panel'
       };
     }
     const isNoisyMEP = normTask.includes('cat') || normTask.includes('duc') || normTask.includes('ong dong') || normTask.includes('tu dien') || normTask.includes('he thong');
