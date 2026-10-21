@@ -571,69 +571,69 @@ export const LABOR_NORMS = [
   },
   {
     code: 'FUR-01',
-    name: 'Lắp đặt tủ bếp trên & tủ bếp dưới hoàn chỉnh',
+    name: 'Lắp ráp module tủ bếp trên & dưới hoàn thiện tại công trình (đã sản xuất sẵn từ xưởng)',
     trade: 'FURNITURE',
     unit: 'md',
-    productivityPerManDay: 1.6,
+    productivityPerManDay: 5.0,
     defaultCrewSize: 2,
     weekendTag: 'LIFT_SMELL_WEEKEND',
     keywords: ['tủ bếp', 'tủ bếp trên', 'tủ bếp dưới', 'bếp gỗ', 'lắp tủ bếp'],
-    note: 'Chuyển thùng tủ thang tải & khoan treo T7-CN; lắp cánh phụ kiện T2-T6'
+    note: 'Hàng đã gia công sẵn ở xưởng, ở công trình thợ chỉ lắp dựng, căn chỉnh cánh & bắt phụ kiện (5.0 md/công)'
   },
   {
     code: 'FUR-02',
-    name: 'Lắp đặt tủ quần áo / tủ âm tường / tủ hồ sơ kịch trần',
+    name: 'Lắp ráp module tủ áo, tủ âm tường, tủ hồ sơ kịch trần (đã sản xuất sẵn từ xưởng)',
     trade: 'FURNITURE',
     unit: 'm2',
-    productivityPerManDay: 3.5,
+    productivityPerManDay: 8.0,
     defaultCrewSize: 2,
     weekendTag: 'LIFT_SMELL_WEEKEND',
     keywords: ['tủ quần áo', 'tủ áo', 'tủ trang trí', 'tủ hồ sơ', 'tủ âm tường', 'tủ giày'],
-    note: 'Ván khổ lớn 2.4-2.7m cần thang hàng T7-CN; lắp dựng module làm T2-T6'
+    note: 'Chỉ lắp ghép thùng module & phụ kiện tại công trường (8.0 m2/công)'
   },
   {
     code: 'FUR-03',
     name: 'Thi công vách ốp gỗ trang trí, lam sóng, Backdrop lễ tân',
     trade: 'FURNITURE',
     unit: 'm2',
-    productivityPerManDay: 5.5,
+    productivityPerManDay: 10.0,
     defaultCrewSize: 2,
     weekendTag: 'HIGH_NOISE_WEEKEND',
     keywords: ['vách ốp gỗ', 'lam gỗ', 'vách trang trí', 'ốp vách', 'lam sóng', 'vách đầu giường', 'nội thất'],
-    note: 'Khoan tường bắt khung xương gỗ ưu tiên T7-CN; ốp tấm làm T2-T6'
+    note: 'Khoan bắn khung xương gỗ T7-CN; ốp tấm hoàn thiện làm T2-T6 (10.0 m2/công)'
   },
   {
     code: 'FUR-04',
-    name: 'Lắp đặt cửa gỗ công nghiệp / cửa nhựa Composite',
+    name: 'Lắp dựng cửa gỗ công nghiệp / cửa nhựa Composite hoàn thiện',
     trade: 'FURNITURE',
     unit: 'bộ',
-    productivityPerManDay: 2.2,
+    productivityPerManDay: 4.0,
     defaultCrewSize: 2,
     weekendTag: 'QUIET_WEEKDAY',
     keywords: ['cửa gỗ', 'cửa phòng', 'cửa composite', 'cửa nhựa', 'lắp cửa'],
-    note: 'Bơm foam, đóng nẹp chỉ, lắp khóa êm, làm T2-T6'
+    note: 'Lắp khuôn cửa, bắt bản lề, khóa & đóng nẹp chỉ (4 bộ/công)'
   },
   {
     code: 'FUR-05',
     name: 'Lắp đặt vách kính cường lực văn phòng / cabin tắm kính',
     trade: 'FURNITURE',
     unit: 'm2',
-    productivityPerManDay: 7.0,
-    defaultCrewSize: 3,
+    productivityPerManDay: 12.0,
+    defaultCrewSize: 2,
     weekendTag: 'LIFT_SMELL_WEEKEND',
     keywords: ['vách kính', 'kính cường lực', 'cabin tắm', 'cửa kính'],
-    note: 'Khổ kính lớn chuyển thang hàng T7-CN & cắt sàn chôn bản lề'
+    note: 'Lắp nẹp sập nhôm & vào kính đã cắt mài sẵn (12 m2/công)'
   },
   {
     code: 'FUR-06',
-    name: 'Lắp đặt nội thất rời (giường, bàn làm việc, kệ tivi, bàn họp)',
+    name: 'Lắp đặt & kê đặt nội thất rời (bàn làm việc, ghế, sofa, giường ngủ, bàn ăn)',
     trade: 'FURNITURE',
     unit: 'cái',
-    productivityPerManDay: 3.0,
+    productivityPerManDay: 8.0,
     defaultCrewSize: 2,
     weekendTag: 'QUIET_WEEKDAY',
     keywords: ['giường ngủ', 'giường', 'bàn làm việc', 'kệ tivi', 'bàn họp', 'bàn ăn', 'quầy lễ tân', 'đồ rời'],
-    note: 'Lắp ráp module êm ái: Làm T2-T6 bình thường'
+    note: 'Lắp chân bàn, kê đặt vị trí thiết kế theo layout (8 cái/công)'
   },
   {
     code: 'FUR-07',
@@ -684,10 +684,11 @@ export const PROJECT_TEMPLATES = {
       { code: 'MEP-01', name: 'Thi công hệ thống Điện nguồn, Mạng LAN & Chiếu sáng văn phòng', trade: 'MEP', unit: 'm2', quantity: 250, productivityPerManDay: 8.0, crewSize: 4, weekendTag: 'HIGH_NOISE_WEEKEND' },
       { code: 'PNT-01', name: 'Bả bột matit 2 lớp & sơn nước không mùi hoàn thiện vách, trần', trade: 'PAINT', unit: 'm2', quantity: 520, productivityPerManDay: 18.0, crewSize: 4, weekendTag: 'QUIET_WEEKDAY' },
       { code: 'FLR-03', name: 'Trải thảm tấm văn phòng 500x500 & dán sàn nhựa khu Pantry', trade: 'FLOOR', unit: 'm2', quantity: 245, productivityPerManDay: 32.0, crewSize: 3, weekendTag: 'LIFT_SMELL_WEEKEND' },
-      { code: 'FUR-05', name: 'Vận chuyển thang hàng & lắp vách kính cường lực 10mm phòng họp', trade: 'FURNITURE', unit: 'm2', quantity: 68, productivityPerManDay: 7.0, crewSize: 3, weekendTag: 'LIFT_SMELL_WEEKEND' },
-      { code: 'FUR-03', name: 'Ốp vách gỗ Laminate khu vực Backdrop Lễ tân & phòng họp', trade: 'FURNITURE', unit: 'm2', quantity: 42, productivityPerManDay: 5.5, crewSize: 3, weekendTag: 'HIGH_NOISE_WEEKEND' },
-      { code: 'FUR-02', name: 'Lắp đặt hệ tủ Pantry, tủ hồ sơ âm tường & quầy Reception', trade: 'FURNITURE', unit: 'm2', quantity: 38, productivityPerManDay: 3.5, crewSize: 4, weekendTag: 'LIFT_SMELL_WEEKEND' },
-      { code: 'FUR-06', name: 'Lắp đặt cụm bàn làm việc nhân viên, bàn họp lớn, bàn GĐ', trade: 'FURNITURE', unit: 'cái', quantity: 28, productivityPerManDay: 3.0, crewSize: 3, weekendTag: 'QUIET_WEEKDAY' },
+      { code: 'FUR-05', name: 'Vận chuyển thang hàng & lắp vách kính cường lực 10mm phòng họp', trade: 'FURNITURE', unit: 'm2', quantity: 68, productivityPerManDay: 12.0, crewSize: 3, weekendTag: 'LIFT_SMELL_WEEKEND' },
+      { code: 'FUR-03', name: 'Ốp vách gỗ Laminate khu vực Backdrop Lễ tân & phòng họp', trade: 'FURNITURE', unit: 'm2', quantity: 42, productivityPerManDay: 10.0, crewSize: 2, weekendTag: 'HIGH_NOISE_WEEKEND' },
+      { code: 'FUR-02', name: 'Lắp ráp module tủ Pantry, tủ hồ sơ âm tường & quầy Reception', trade: 'FURNITURE', unit: 'm2', quantity: 38, productivityPerManDay: 8.0, crewSize: 2, weekendTag: 'LIFT_SMELL_WEEKEND' },
+      { code: 'FUR-06', name: 'Lắp ráp & kê đặt cụm bàn làm việc nhân viên, bàn họp lớn, bàn GĐ', trade: 'FURNITURE', unit: 'cái', quantity: 28, productivityPerManDay: 8.0, crewSize: 2, weekendTag: 'QUIET_WEEKDAY' },
+      { code: 'LOG-01', name: 'Thợ phụ bốc xếp kiện gỗ nội thất từ xe tải qua thang hàng lên văn phòng', trade: 'LOGISTICS', unit: 'chuyến', quantity: 3, productivityPerManDay: 1.5, crewSize: 2, weekendTag: 'LIFT_SMELL_WEEKEND' },
       { code: 'FUR-07', name: 'Vệ sinh công nghiệp bàn giao văn phòng', trade: 'DEMO', unit: 'm2', quantity: 250, productivityPerManDay: 35.0, crewSize: 4, weekendTag: 'QUIET_WEEKDAY' }
     ]
   },
@@ -705,11 +706,12 @@ export const PROJECT_TEMPLATES = {
       { code: 'MEP-03', name: 'Đi dây điện bổ sung, lắp đèn Downlight, LED dây & công tắc ổ cắm', trade: 'MEP', unit: 'bộ', quantity: 65, productivityPerManDay: 12.0, crewSize: 2, weekendTag: 'QUIET_WEEKDAY' },
       { code: 'PNT-01', name: 'Bả matit 2 lớp & sơn nước Dulux toàn bộ tường, trần căn hộ', trade: 'PAINT', unit: 'm2', quantity: 265, productivityPerManDay: 18.0, crewSize: 3, weekendTag: 'QUIET_WEEKDAY' },
       { code: 'FLR-01', name: 'Lát sàn gỗ công nghiệp 12mm cho 2 phòng ngủ + đóng len chân tường', trade: 'FLOOR', unit: 'm2', quantity: 42, productivityPerManDay: 22.0, crewSize: 2, weekendTag: 'QUIET_WEEKDAY' },
-      { code: 'FUR-01', name: 'Lắp đặt tủ bếp trên + tủ bếp dưới MDF lõi xanh phủ Acrylic', trade: 'FURNITURE', unit: 'md', quantity: 9.5, productivityPerManDay: 1.6, crewSize: 2, weekendTag: 'LIFT_SMELL_WEEKEND' },
-      { code: 'FUR-02', name: 'Lắp đặt 2 tủ quần áo kịch trần, tủ giày & kệ trang trí', trade: 'FURNITURE', unit: 'm2', quantity: 26, productivityPerManDay: 3.5, crewSize: 3, weekendTag: 'LIFT_SMELL_WEEKEND' },
-      { code: 'FUR-03', name: 'Ốp vách gỗ + lam sóng trang trí phòng khách & vách đầu giường', trade: 'FURNITURE', unit: 'm2', quantity: 22, productivityPerManDay: 5.5, crewSize: 2, weekendTag: 'HIGH_NOISE_WEEKEND' },
-      { code: 'FUR-04', name: 'Lắp đặt cửa gỗ phòng ngủ & cửa WC Composite', trade: 'FURNITURE', unit: 'bộ', quantity: 4, productivityPerManDay: 2.2, crewSize: 2, weekendTag: 'QUIET_WEEKDAY' },
-      { code: 'FUR-06', name: 'Lắp đặt 2 giường ngủ, kệ tivi, bàn trang điểm, bàn ăn', trade: 'FURNITURE', unit: 'cái', quantity: 7, productivityPerManDay: 3.0, crewSize: 2, weekendTag: 'QUIET_WEEKDAY' }
+      { code: 'FUR-01', name: 'Lắp ráp module tủ bếp trên + tủ bếp dưới MDF Acrylic (đóng sẵn ở xưởng)', trade: 'FURNITURE', unit: 'md', quantity: 9.5, productivityPerManDay: 5.0, crewSize: 2, weekendTag: 'LIFT_SMELL_WEEKEND' },
+      { code: 'FUR-02', name: 'Lắp ráp 2 tủ quần áo kịch trần, tủ giày & kệ trang trí', trade: 'FURNITURE', unit: 'm2', quantity: 26, productivityPerManDay: 8.0, crewSize: 2, weekendTag: 'LIFT_SMELL_WEEKEND' },
+      { code: 'FUR-03', name: 'Ốp vách gỗ + lam sóng trang trí phòng khách & vách đầu giường', trade: 'FURNITURE', unit: 'm2', quantity: 22, productivityPerManDay: 10.0, crewSize: 2, weekendTag: 'HIGH_NOISE_WEEKEND' },
+      { code: 'FUR-04', name: 'Lắp đặt cửa gỗ phòng ngủ & cửa WC Composite', trade: 'FURNITURE', unit: 'bộ', quantity: 4, productivityPerManDay: 4.0, crewSize: 2, weekendTag: 'QUIET_WEEKDAY' },
+      { code: 'FUR-06', name: 'Kê đặt 2 giường ngủ, kệ tivi, bàn trang điểm, bàn ăn', trade: 'FURNITURE', unit: 'cái', quantity: 7, productivityPerManDay: 8.0, crewSize: 2, weekendTag: 'QUIET_WEEKDAY' },
+      { code: 'LOG-01', name: 'Thợ phụ bốc vác kiện nội thất & thiết bị từ sảnh qua thang máy lên căn hộ', trade: 'LOGISTICS', unit: 'chuyến', quantity: 1, productivityPerManDay: 1.5, crewSize: 2, weekendTag: 'LIFT_SMELL_WEEKEND' }
     ]
   },
   showroom120: {
