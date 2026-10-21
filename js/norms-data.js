@@ -163,18 +163,33 @@ export const TRADES = {
   },
   FURNITURE: {
     id: 'FURNITURE',
-    name: 'Tổ Mộc & Lắp Đặt Nội Thất Fitout',
-    shortName: 'Thợ Nội thất / Mộc',
+    name: 'Tổ Thợ Mộc Lắp Đặt Công Trình',
+    shortName: 'Thợ Mộc Lắp Đặt',
     icon: '',
     color: '#0f4c81',
     bgLight: '#f1f5f9',
     phase: 4,
-    startPct: 0.60,
+    startPct: 0.65,
     endPct: 1.00,
     defaultDailyWage: 680000,
     weekendBoost: true,
-    weekendStrategy: 'Tranh thủ T7-CN đăng ký thang tải chuyển kiện gỗ nội thất, vách kính lớn và khoan treo tủ; T2-T6 lắp ráp module êm.',
-    roleDesc: 'Thợ lắp đặt tủ bếp, tủ áo, vách ốp gỗ, cửa, vách kính, bàn ghế & hoàn thiện bàn giao'
+    weekendStrategy: 'Chỉ đảm nhiệm khâu lắp ráp tinh chỉnh đồ gỗ tại công trường (hàng đã gia công sẵn ở xưởng). Khoan treo tủ, vách gỗ lớn làm T7-CN; bắt phụ kiện, căn chỉnh cánh làm T2-T6.',
+    roleDesc: 'Thợ mộc chuyên lắp dựng tủ bếp, tủ áo, vách ốp, bàn ghế đóng sẵn từ xưởng đưa tới'
+  },
+  LOGISTICS: {
+    id: 'LOGISTICS',
+    name: 'Tổ Thợ Phụ & Bốc Xếp Vận Chuyển',
+    shortName: 'Thợ Phụ / Bốc Xếp',
+    icon: '',
+    color: '#64748b',
+    bgLight: '#f8fafc',
+    phase: 1,
+    startPct: 0.0,
+    endPct: 0.95,
+    defaultDailyWage: 420000,
+    weekendBoost: true,
+    weekendStrategy: 'Tập trung bốc vác vật tư, kiện gỗ, kính khổ lớn từ xe tải vào thang hàng (Service Lift) lên tầng thi công vào Thứ 7 & Chủ Nhật để không cản trở tòa nhà.',
+    roleDesc: 'Thợ phụ bốc xếp vật tư nặng, trực thang máy hàng, trung chuyển hàng từ xe vào tầng và phụ thợ chính'
   }
 };
 
@@ -630,6 +645,28 @@ export const LABOR_NORMS = [
     weekendTag: 'QUIET_WEEKDAY',
     keywords: ['vệ sinh công nghiệp', 'vệ sinh bàn giao', 'dọn vệ sinh hoàn thiện'],
     note: 'Thường chốt vào Chủ Nhật để sáng Thứ 2 bàn giao Sếp / CĐT'
+  },
+  {
+    code: 'LOG-01',
+    name: 'Bốc xếp kiện gỗ nội thất từ xe tải qua thang hàng (Service Lift) lên tầng',
+    trade: 'LOGISTICS',
+    unit: 'chuyến',
+    productivityPerManDay: 1.5,
+    defaultCrewSize: 3,
+    weekendTag: 'LIFT_SMELL_WEEKEND',
+    keywords: ['boc xep', 'van chuyen noi that', 'boc vac', 'chuyen thang hang', 'van chuyen vat tu'],
+    note: 'Đăng ký thang hàng tòa nhà Thứ 7 - Chủ Nhật để tập kết kiện gỗ vào mặt bằng'
+  },
+  {
+    code: 'LOG-02',
+    name: 'Thợ phụ hỗ trợ lắp ráp, khuân vác tấm module gỗ, giữ phụ kiện cho thợ chính',
+    trade: 'LOGISTICS',
+    unit: 'công',
+    productivityPerManDay: 1.0,
+    defaultCrewSize: 2,
+    weekendTag: 'QUIET_WEEKDAY',
+    keywords: ['tho phu', 'phu moc', 'ho tro lap dat', 'khuan vac', 'phu lap rap'],
+    note: 'Bố trí thợ phụ đi kèm để tăng năng suất lắp ráp của thợ mộc chính'
   }
 ];
 

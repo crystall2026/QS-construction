@@ -304,6 +304,18 @@ export function matchLaborNorm(taskName, unitHint = '') {
     };
   }
 
+  if (normTask.includes('boc xep') || normTask.includes('boc vac') || normTask.includes('khuan vac') || normTask.includes('tho phu') || normTask.includes('van chuyen noi that')) {
+    return {
+      code: 'LOG-01',
+      trade: 'LOGISTICS',
+      unit: unitHint || 'công',
+      productivityPerManDay: 1.0,
+      crewSize: 2,
+      weekendTag: 'LIFT_SMELL_WEEKEND',
+      matchedNormName: 'Bốc xếp vận chuyển nội thất'
+    };
+  }
+
   return {
     code: 'FUR-03',
     trade: 'FURNITURE',
@@ -311,7 +323,7 @@ export function matchLaborNorm(taskName, unitHint = '') {
     productivityPerManDay: 5.5,
     crewSize: 2,
     weekendTag: 'LIFT_SMELL_WEEKEND',
-    matchedNormName: 'Thi công lắp đặt nội thất Fitout'
+    matchedNormName: 'Lắp ráp hoàn thiện nội thất Fitout'
   };
 }
 
@@ -373,7 +385,10 @@ NHIỆM VỤ QUAN TRỌNG:
    - Đèn trần chỉ lắp ráp: 20 bộ/công. Đèn gộp cả dây ống: 5.5 bộ/công. Đèn thả decor: 6 bộ/công.
    - Ổ cắm/công tắc chỉ đấu mặt hạt: 18 cái/công. Ổ cắm/mạng gộp cả cắt đục & dây ống: 6 điểm/công.
    - Node mạng LAN: 25 node/công. Tủ Rack mạng: 1.5 tủ/công.
-3. Trades hợp lệ: DEMO, MASON, GYPSUM, MEP, PAINT, FLOOR, FURNITURE.
+3. PHÂN ĐỊNH THỢ MỘC & THỢ PHỤ BỐC XẾP:
+   - Hàng mộc nội thất (tủ, bàn, vách ốp) đã gia công ở xưởng, ở công trình CHỈ TÍNH CÔNG LẮP RÁP HOÀN THIỆN (Trade: FURNITURE, 680k/công).
+   - Nếu có công tác khuân vác, bốc xếp kiện gỗ từ xe tải qua thang hàng, vận chuyển vật tư nặng hoặc thợ phụ bưng bê thì tách riêng thành Tổ Thợ Phụ Bốc Xếp (Trade: LOGISTICS, 420k/công).
+4. Trades hợp lệ: DEMO, MASON, GYPSUM, MEP, PAINT, FLOOR, FURNITURE, LOGISTICS.
 WeekendTags: HIGH_NOISE_WEEKEND (việc ồn), LIFT_SMELL_WEEKEND (mùi/thang tải), QUIET_WEEKDAY (việc êm làm T2-T6).
 
 Trả về JSON duy nhất:
