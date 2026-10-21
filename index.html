@@ -57,25 +57,17 @@
       </div>
 
       <div class="project-action-buttons no-print">
-        <button type="button" class="btn-hero btn-hero-primary" commandfor="modal-new-project" command="show-modal">
-          <span class="btn-hero-icon">➕</span>
-          <span class="btn-hero-text">Tạo Dự Án Mới</span>
+        <button type="button" class="btn-hero btn-hero-primary" commandfor="modal-unified-project-creator" command="show-modal">
+          <span class="btn-hero-icon">🚀</span>
+          <span class="btn-hero-text">Khởi Tạo & Bóc Tách Dự Án</span>
         </button>
-        <button type="button" class="btn-hero btn-hero-accent" commandfor="modal-input-boq" command="show-modal">
-          <span class="btn-hero-icon">📥</span>
-          <span class="btn-hero-text">Nhập Khối Lượng Hoặc Tải BOQ</span>
-        </button>
-        <button type="button" class="btn-hero btn-hero-slate" commandfor="modal-schedule-config" command="show-modal">
-          <span class="btn-hero-icon">⚙️</span>
-          <span class="btn-hero-text">Thiết Lập Lịch & Khởi Công</span>
+        <button type="button" id="btn-open-history" class="btn-hero btn-hero-accent" commandfor="modal-project-history" command="show-modal">
+          <span class="btn-hero-icon">📂</span>
+          <span class="btn-hero-text">Dự Án Gần Đây (<span id="header-history-count">0</span>)</span>
         </button>
         <button type="button" class="btn-hero btn-hero-gold" commandfor="norms-dialog" command="show-modal">
           <span class="btn-hero-icon">📖</span>
-          <span class="btn-hero-text">Điều Chỉnh & Bổ Sung Định Mức</span>
-        </button>
-        <button type="button" id="btn-load-demo-project" class="btn-hero btn-hero-gold">
-          <span class="btn-hero-icon">⚡</span>
-          <span class="btn-hero-text">Xem Dữ Liệu Demo</span>
+          <span class="btn-hero-text">Định Mức & Đơn Giá</span>
         </button>
         <button type="button" id="btn-open-ai-consulting" class="btn-hero btn-hero-ai" commandfor="modal-ai-consulting" command="show-modal">
           <span class="btn-hero-icon">💡</span>
@@ -87,6 +79,9 @@
         <button type="button" id="btn-print-report" class="btn-secondary btn-hero-sub">
           📄 In / Tải PDF
         </button>
+        <button type="button" id="btn-clear-project-screen" class="btn-secondary btn-hero-sub" style="color:#ef4444; border-color:#fca5a5;" title="Xóa màn hình hiện tại để làm dự án mới">
+          🗑️ Làm Mới
+        </button>
       </div>
     </section>
 
@@ -96,14 +91,14 @@
         <div class="empty-state-icon">📋</div>
         <h3 class="empty-state-title">Chưa có dữ liệu dự án thi công nào</h3>
         <p class="empty-state-desc">
-          Vui lòng bấm <strong>"➕ Tạo Dự Án Mới"</strong> hoặc <strong>"📥 Nhập Khối Lượng Hoặc Tải BOQ"</strong> để tính toán nhân sự, phân bổ thợ và chi phí nhân công.
+          Vui lòng bấm <strong>"🚀 Khởi Tạo & Bóc Tách Dự Án"</strong> để nhập thông số tiến độ, tải BOQ và tính toán nhân lực hoàn chỉnh.
         </p>
         <div class="empty-state-actions">
-          <button type="button" class="btn-hero btn-hero-primary" commandfor="modal-new-project" command="show-modal">
-            ➕ Tạo Dự Án Mới
+          <button type="button" class="btn-hero btn-hero-primary" commandfor="modal-unified-project-creator" command="show-modal">
+            🚀 Khởi Tạo & Bóc Tách Dự Án Ngay
           </button>
-          <button type="button" class="btn-hero btn-hero-accent" commandfor="modal-input-boq" command="show-modal">
-            📥 Nhập Khối Lượng Hoặc Tải BOQ
+          <button type="button" class="btn-hero btn-hero-accent" commandfor="modal-project-history" command="show-modal">
+            📂 Mở Dự Án Gần Đây
           </button>
           <button type="button" id="btn-load-demo-empty" class="btn-hero btn-hero-gold">
             ⚡ Chạy Thử Dữ Liệu Mẫu (Demo)
@@ -298,6 +293,173 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; pt:8px; border-top:1px solid #e2e8f0;">
         <span style="font-size:12px; color:#64748b;">Khuyến nghị được tạo dựa trên định mức Crystal Interior & AI Google Gemini</span>
         <button type="button" id="btn-refresh-ai-consult" class="btn-slate btn-sm">🔄 Tạo Lại Phân Tích Mới</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- =======================================================================
+       MODAL HỢP NHẤT: KHỞI TẠO DỰ ÁN & BÓC TÁCH KHỐI LƯỢNG (1 BƯỚC DUY NHẤT)
+       ======================================================================= -->
+  <dialog id="modal-unified-project-creator">
+    <div class="dialog-inner" style="max-width:920px;">
+      <div class="dialog-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <h3 style="margin:0; font-size:18px;">🚀 Khởi Tạo Dự Án & Bóc Tách Khối Lượng</h3>
+          <span style="font-size:11.5px; background:#eff6ff; color:#0f4c81; padding:3px 10px; border-radius:99px; font-weight:700;">
+            Quy trình hoàn chỉnh 1 bước
+          </span>
+        </div>
+        <button type="button" class="btn-secondary btn-sm" commandfor="modal-unified-project-creator" command="close">✕ Đóng</button>
+      </div>
+
+      <form id="form-unified-creator">
+        <!-- BƯỚC 1: THIẾT LẬP THÔNG SỐ & TIẾN ĐỘ -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 18px; margin-bottom:16px;">
+          <div style="font-weight:800; font-size:13.5px; color:#0f4c81; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+            <span>1️⃣</span> THÔNG TIN DỰ ÁN & TIẾN ĐỘ THI CÔNG (THỨ 7 - CHỦ NHẬT)
+          </div>
+
+          <div class="modal-grid-2" style="margin-bottom:10px;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label for="u-proj-name" style="font-weight:700; font-size:12.5px;">Tên Dự Án / Gói Thầu:</label>
+              <input type="text" id="u-proj-name" placeholder="VD: Fitout Văn Phòng Techcombank Tầng 12 - 250m²" required />
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label for="u-proj-type" style="font-weight:700; font-size:12.5px;">Loại Hình Công Trình:</label>
+              <select id="u-proj-type">
+                <option value="OFFICE_BUILDING">Tòa Nhà Văn Phòng (Khắt khe tiếng ồn T2-T6)</option>
+                <option value="APARTMENT">Khu Căn Hộ Chung Cư (Nghỉ trưa & nghỉ Chủ Nhật)</option>
+                <option value="TOWNHOUSE">Nhà Phố / Biệt Thự (Mặt bằng độc lập, làm cả T7-CN)</option>
+                <option value="SHOPHOUSE_MALL">Shophouse / TTTM (Chỉ cho phép làm ca đêm)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1.2fr 1fr; gap:12px; margin-bottom:10px;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label for="u-start-date" style="font-weight:700; font-size:12px;">Ngày Khởi Công:</label>
+              <input type="date" id="u-start-date" required />
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label for="u-target-days" style="font-weight:700; font-size:12px;">Số Ngày Làm (Mục Tiêu):</label>
+              <input type="number" id="u-target-days" min="1" max="180" value="14" required />
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label for="u-weekend-mode" style="font-weight:700; font-size:12px;">Chế Độ Thứ 7 & CN:</label>
+              <select id="u-weekend-mode">
+                <option value="WEEKEND_NOISY_FOCUS">T2-T6 làm êm, T7-CN dồn việc ồn</option>
+                <option value="FULL_WITH_WEEKEND_BOOST">Làm cả tuần (T7-CN tăng tốc việc nặng)</option>
+                <option value="SAT_WORK_SUN_OFF">Làm Thứ 2 - Thứ 7 (Nghỉ Chủ Nhật)</option>
+                <option value="MON_FRI_ONLY">Nghỉ cả Thứ 7 & CN (Tòa nhà cấm làm)</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label for="u-shift" style="font-weight:700; font-size:12px;">Thời Gian / Ca:</label>
+              <select id="u-shift">
+                <option value="8">8h/ngày (Hành chính)</option>
+                <option value="10">10h/ngày (Tăng ca x1.22)</option>
+                <option value="12">12h/ngày (Tăng ca x1.45)</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="u-calc-date-summary" style="padding:8px 14px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; font-size:12.5px; color:#1e40af; display:flex; justify-content:space-between; align-items:center;">
+            <span>📅 Bắt đầu: <strong id="u-preview-start">...</strong></span>
+            <span>🏁 Bàn giao: <strong id="u-preview-end">...</strong> (<span id="u-preview-total-cal">0</span> ngày theo lịch)</span>
+          </div>
+        </div>
+
+        <!-- BƯỚC 2: NẠP KHỐI LƯỢNG BOQ -->
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px 18px; margin-bottom:16px;">
+          <div style="font-weight:800; font-size:13.5px; color:#0f4c81; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+            <span>2️⃣</span> NẠP KHỐI LƯỢNG CÔNG VIỆC BOQ
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:16px;">
+            <!-- Cột trái: Tải file BOQ Excel / PDF -->
+            <div>
+              <div style="font-weight:700; color:#334155; margin-bottom:6px; font-size:12.5px;">
+                📂 Cách 1: Tải file BOQ Excel hoặc PDF:
+              </div>
+              <div id="u-dropzone" class="boq-dropzone" style="padding:16px 12px;">
+                <div class="dropzone-icon" style="font-size:24px;">📊</div>
+                <p class="dropzone-title" style="font-size:13px; margin:4px 0;">Kéo thả file Excel (.xlsx, .xls, .csv) hoặc PDF (.pdf)</p>
+                <label for="u-file-input" class="btn-primary btn-sm" style="cursor:pointer; display:inline-block; margin-top:4px;">
+                  📤 Chọn File Từ Máy Tính
+                </label>
+                <input type="file" id="u-file-input" accept=".xlsx,.xls,.csv,.pdf" hidden />
+              </div>
+
+              <div id="u-file-ready-bar" style="display:none; margin-top:8px; padding:8px 12px; background:#f0fdf4; border:1px solid #86efac; border-radius:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span id="u-selected-filename" style="font-weight:700; color:#166534; font-size:12.5px;">📄 Đã chọn file</span>
+                  <button type="button" id="u-btn-remove-file" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; font-weight:700;">✕ Bỏ file</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cột phải: Gõ tự do hoặc chọn mẫu demo -->
+            <div>
+              <div style="font-weight:700; color:#334155; margin-bottom:6px; font-size:12.5px;">
+                ✍️ Cách 2: Gõ nhanh mô tả công việc:
+              </div>
+              <textarea id="u-quick-text" placeholder="VD: 150m2 vách thạch cao, 300m2 sơn tường, 60 bộ đèn led downlight kèm dây, 80 cái ghế xoay..." style="width:100%; height:80px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:12.5px; resize:none;"></textarea>
+
+              <div style="margin-top:10px;">
+                <div style="font-weight:700; color:#475569; font-size:12px; margin-bottom:4px;">⚡ Hoặc nạp kịch bản mẫu có sẵn:</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <button type="button" class="btn-secondary btn-sm u-btn-template" data-template="office250" style="font-size:11.5px; padding:4px 8px;">🏢 Văn Phòng 250m²</button>
+                  <button type="button" class="btn-secondary btn-sm u-btn-template" data-template="apartment85" style="font-size:11.5px; padding:4px 8px;">🏠 Căn Hộ 85m²</button>
+                  <button type="button" class="btn-secondary btn-sm u-btn-template" data-template="showroom120" style="font-size:11.5px; padding:4px 8px;">🛍️ Showroom 120m²</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BƯỚC 3: NÚT BẤM PHÂN TÍCH & TRẢ KẾT QUẢ RA BẢNG TÍNH -->
+        <div style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:10px; padding:14px 18px; display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:12.5px; color:#475569;">
+            💡 <em>Sau khi chọn phân tích, hệ thống sẽ tự động tính toán nhân lực và mở đầy đủ 3 bảng chi tiết ra màn hình.</em>
+          </div>
+
+          <div style="display:flex; gap:10px;">
+            <button type="button" id="u-btn-instant-calc" class="btn-primary" style="padding:10px 16px; font-weight:800;">
+              ⚡ Bóc Tách Bảng Tính (Nhanh)
+            </button>
+            <button type="button" id="u-btn-ai-calc" class="btn-hero-accent" style="padding:10px 18px; font-weight:800; color:#fff;">
+              ✨ Gemini AI Phân Tích (Chuyên Sâu)
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- =======================================================================
+       MODAL: LỊCH SỬ DỰ ÁN GẦN ĐÂY (HISTORY)
+       ======================================================================= -->
+  <dialog id="modal-project-history">
+    <div class="dialog-inner" style="max-width:800px;">
+      <div class="dialog-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <h3 style="margin:0; font-size:18px;">📂 Danh Sách Dự Án Gần Đây (History)</h3>
+          <span id="history-count-badge" style="font-size:11.5px; background:#eff6ff; color:#0f4c81; padding:3px 8px; border-radius:99px; font-weight:700;">
+            0 dự án đã lưu
+          </span>
+        </div>
+        <button type="button" class="btn-secondary btn-sm" commandfor="modal-project-history" command="close">✕ Đóng</button>
+      </div>
+
+      <div id="history-projects-list" style="max-height:480px; overflow-y:auto; padding:8px 2px;">
+        <!-- Danh sách thẻ dự án render động bằng JS -->
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid #e2e8f0;">
+        <button type="button" id="btn-clear-all-history" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer;">
+          🗑️ Xóa toàn bộ lịch sử
+        </button>
+        <button type="button" class="btn-secondary" commandfor="modal-project-history" command="close">Đóng</button>
       </div>
     </div>
   </dialog>
@@ -609,7 +771,10 @@
             style="flex:1; padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;"
           />
         </div>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" id="btn-ai-update-market-wages" class="btn-hero btn-hero-ai btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+            🌐 AI Dò Giá Thị Trường Web
+          </button>
           <button type="button" id="btn-toggle-add-norm" class="btn-hero btn-hero-gold btn-sm">
             ➕ Bổ Sung Định Mức Mới
           </button>
@@ -617,6 +782,10 @@
             🔄 Đặt Lại Gốc
           </button>
         </div>
+      </div>
+
+      <!-- KHỐI XEM TRƯỚC VÀ ÁP DỤNG ĐƠN GIÁ THỊ TRƯỜNG TỪ AI -->
+      <div id="market-wage-preview-container" style="display:none; margin-top:12px; background:#eff6ff; border:1px solid #93c5fd; border-radius:8px; padding:14px;">
       </div>
 
       <!-- FORM THÊM ĐỊNH MỨC MỚI (ẨN/HIỆN KHI BẤM) -->

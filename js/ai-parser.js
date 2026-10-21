@@ -815,3 +815,74 @@ export function fileToBase64(file) {
     reader.readAsDataURL(file);
   });
 }
+
+// TRA CỨU ĐƠN GIÁ NHÂN CÔNG THỰC TẾ TRÊN WEB / THỊ TRƯỜNG BẰNG GEMINI AI
+export async function fetchMarketLaborWagesWithAI() {
+  const apiKey = getActiveApiKey();
+  const prompt = `Bạn là Chuyên gia Khảo sát Đơn giá Nhân công Xây dựng & Nội thất Fitout tại Việt Nam.
+Hãy cập nhật mặt bằng đơn giá nhân công thợ chuyên nghiệp thị trường thực tế (1 ngày công chuẩn 8 tiếng, không bao gồm ăn ở) tại các thành phố lớn (TP.HCM, Hà Nội) cập nhật năm 2025 - 2026.
+Bao gồm các tổ đội:
+- DEMO: Thợ tháo dỡ, đục gạch, xà bần
+- MASON: Thợ nề, xây tô, ốp lát gạch đá
+- GYPSUM: Thợ trần và vách thạch cao
+- MEP: Thợ điện nước, kéo dây, lắp đèn, mạng LAN
+- PAINT: Thợ sơn nước, bả matit hoàn thiện
+- FLOOR: Thợ lát sàn gỗ, sàn nhựa, trải thảm
+- FURNITURE: Thợ mộc chuyên lắp ráp hoàn thiện đồ gỗ tại công trình
+- LOGISTICS: Thợ phụ bốc xếp, vận chuyển thang hàng
+
+Trả về JSON duy nhất theo định dạng:
+{
+  "updatedYear": "2025-2026",
+  "marketSummary": "Mô tả ngắn gọn về biến động giá nhân công thực tế trên thị trường",
+  "wages": {
+    "DEMO": { "dailyWage": 480000, "note": "Thợ tháo dỡ xà bần" },
+    "MASON": { "dailyWage": 620000, "note": "Thợ nề ốp lát tay nghề khá" },
+    "GYPSUM": { "dailyWage": 600000, "note": "Thợ thạch cao khung chìm vách" },
+    "MEP": { "dailyWage": 650000, "note": "Thợ điện nước tay nghề cao" },
+    "PAINT": { "dailyWage": 580000, "note": "Thợ sơn bả matit" },
+    "FLOOR": { "dailyWage": 600000, "note": "Thợ sàn gỗ thảm" },
+    "FURNITURE": { "dailyWage": 680000, "note": "Thợ mộc lắp đặt nội thất" },
+    "LOGISTICS": { "dailyWage": 420000, "note": "Thợ phụ bốc vác trung chuyển" }
+  }
+}`;
+
+  const models = ['models/gemini-flash-lite-latest', 'models/gemini-flash-latest'];
+  let lastErr = null;
+
+  for (const m of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/${m}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 2000,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+
+      if (!res.ok) {
+        lastErr = new Error(`HTTP ${res.status}`);
+        continue;
+      }
+
+      const data = await res.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!rawText) continue;
+
+      const parsed = cleanAndParseJson(rawText);
+      if (parsed && parsed.wages) {
+        return parsed;
+      }
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  throw lastErr || new Error('Không thể tra cứu giá thị trường từ Gemini AI.');
+}

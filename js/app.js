@@ -18,7 +18,8 @@ import {
   analyzeWithGeminiAI,
   generateAIConsultingReport,
   parseExcelBOQFile,
-  fileToBase64
+  fileToBase64,
+  fetchMarketLaborWagesWithAI
 } from './ai-parser.js';
 import { exportFullReportToExcel, downloadSampleBOQExcel } from './exporter.js';
 
@@ -215,7 +216,30 @@ function buildProjectCalendar(startDateISO, targetWorkingDays, weekendMode) {
   };
 }
 
-// --- 3. APPLICATION STATE ---
+// --- 3. APPLICATION STATE & STORAGE MANAGEMENT ---
+const STORAGE_KEY_CURRENT_PROJECT = 'crystal_qs_current_project_v1';
+const STORAGE_KEY_PROJECT_HISTORY = 'crystal_qs_project_history_v1';
+const STORAGE_KEY_CUSTOM_WAGES = 'crystal_qs_trade_wages_v1';
+
+function getInitialTradeWages() {
+  const defaults = Object.fromEntries(
+    Object.entries(TRADES).map(([k, v]) => [k, v.defaultDailyWage])
+  );
+  if (typeof localStorage === 'undefined') return defaults;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_CUSTOM_WAGES);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object') {
+        return { ...defaults, ...parsed };
+      }
+    }
+  } catch (e) {
+    console.warn('Lỗi đọc lương tùy chỉnh:', e);
+  }
+  return defaults;
+}
+
 let stagedBOQFile = null;
 let clearStagedFile = () => {};
 
@@ -224,18 +248,148 @@ const state = {
   projectTitle: 'Chưa có dự án thi công',
   projectType: 'OFFICE_BUILDING',
   startDate: getTodayISOString(),
-  targetDays: 10,
+  targetDays: 14,
   weekendMode: 'WEEKEND_NOISY_FOCUS',
   difficultyFactor: 1.1,
   hoursPerDay: 8,
   autoScaleCrewToTargetDays: true,
-  executiveNote: 'Vui lòng nhập dữ liệu để tính toán nhân sự, chi phí nhân công và lịch Thứ 7 - Chủ Nhật.',
-  tradeWages: Object.fromEntries(
-    Object.entries(TRADES).map(([k, v]) => [k, v.defaultDailyWage])
-  ),
+  executiveNote: 'Vui lòng bấm "🚀 Khởi Tạo & Bóc Tách Dự Án" để tính toán nhân lực & chi phí.',
+  tradeWages: getInitialTradeWages(),
   items: [],
   lastUploadedRawText: ''
 };
+
+export function saveCurrentProjectToStorage() {
+  if (typeof localStorage === 'undefined') return;
+  if (!state.hasProject && state.items.length === 0) return;
+  try {
+    localStorage.setItem(STORAGE_KEY_CURRENT_PROJECT, JSON.stringify(state));
+  } catch (e) {
+    console.warn('Lỗi auto-save project:', e);
+  }
+}
+
+export function loadCurrentProjectFromStorage() {
+  if (typeof localStorage === 'undefined') return false;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_CURRENT_PROJECT);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object' && parsed.items && parsed.items.length > 0) {
+        Object.assign(state, parsed);
+        return true;
+      }
+    }
+  } catch (e) {
+    console.warn('Lỗi load saved project:', e);
+  }
+  return false;
+}
+
+export function clearCurrentProjectStorage() {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.removeItem(STORAGE_KEY_CURRENT_PROJECT);
+  } catch (e) {
+    console.warn('Lỗi clear project storage:', e);
+  }
+}
+
+export function loadProjectHistory() {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_PROJECT_HISTORY);
+    if (raw) {
+      const list = JSON.parse(raw);
+      if (Array.isArray(list)) return list;
+    }
+  } catch (e) {
+    console.warn('Lỗi đọc history:', e);
+  }
+  return [];
+}
+
+export function saveProjectToHistory(calc) {
+  if (typeof localStorage === 'undefined') return;
+  if (!state.hasProject || !state.items || state.items.length === 0) return;
+  try {
+    const history = loadProjectHistory();
+    const id = `proj_${Date.now()}`;
+    const nowStr = new Date().toLocaleString('vi-VN', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    const existingIdx = history.findIndex(p => p.title === state.projectTitle);
+    const entry = {
+      id: existingIdx !== -1 ? history[existingIdx].id : id,
+      title: state.projectTitle,
+      projectType: state.projectType,
+      updatedAt: nowStr,
+      itemsCount: state.items.length,
+      targetDays: state.targetDays,
+      totalManDays: calc?.totalManDays || 0,
+      totalLaborCost: calc?.totalLaborCost || 0,
+      stateSnapshot: JSON.parse(JSON.stringify(state))
+    };
+
+    if (existingIdx !== -1) {
+      history[existingIdx] = entry;
+    } else {
+      history.unshift(entry);
+    }
+
+    const trimmed = history.slice(0, 20);
+    localStorage.setItem(STORAGE_KEY_PROJECT_HISTORY, JSON.stringify(trimmed));
+    updateHistoryBadges(trimmed.length);
+  } catch (e) {
+    console.warn('Lỗi lưu history:', e);
+  }
+}
+
+export function deleteProjectFromHistory(id) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const history = loadProjectHistory().filter(p => p.id !== id);
+    localStorage.setItem(STORAGE_KEY_PROJECT_HISTORY, JSON.stringify(history));
+    renderProjectHistoryModal();
+    updateHistoryBadges(history.length);
+    showToast('Đã xóa dự án khỏi lịch sử!');
+  } catch (e) {
+    console.warn('Lỗi xóa history item:', e);
+  }
+}
+
+export function clearAllProjectHistory() {
+  if (typeof localStorage === 'undefined') return;
+  if (!confirm('Sếp có chắc chắn muốn xóa toàn bộ danh sách dự án gần đây không?')) return;
+  localStorage.removeItem(STORAGE_KEY_PROJECT_HISTORY);
+  renderProjectHistoryModal();
+  updateHistoryBadges(0);
+  showToast('Đã xóa toàn bộ lịch sử dự án!');
+}
+
+export function openProjectFromHistory(id) {
+  const history = loadProjectHistory();
+  const found = history.find(p => p.id === id);
+  if (!found || !found.stateSnapshot) {
+    showToast('Không tìm thấy dữ liệu dự án này.', true);
+    return;
+  }
+  Object.assign(state, found.stateSnapshot);
+  saveCurrentProjectToStorage();
+  renderAll();
+  document.getElementById('modal-project-history')?.close();
+  showToast(`Đã mở lại dự án "${state.projectTitle}"!`);
+}
+
+function updateHistoryBadges(count = null) {
+  const num = count !== null ? count : loadProjectHistory().length;
+  const hBadge1 = document.getElementById('header-history-count');
+  if (hBadge1) hBadge1.textContent = String(num);
+  const hBadge2 = document.getElementById('history-count-badge');
+  if (hBadge2) hBadge2.textContent = `${num} dự án đã lưu`;
+}
 
 function getShiftMultiplier(hours) {
   const h = Number(hours) || 8;
@@ -496,6 +650,7 @@ function renderAll() {
     if (emptyCard) emptyCard.style.display = 'block';
     if (dashboardContent) dashboardContent.style.display = 'none';
     window.__latestCalcResult = calc;
+    updateHistoryBadges();
     return;
   }
 
@@ -534,6 +689,11 @@ function renderAll() {
   renderBOQDetailTable(calc);
 
   window.__latestCalcResult = calc;
+
+  // Tự động lưu trạng thái dự án vào LocalStorage & Lịch sử
+  saveCurrentProjectToStorage();
+  saveProjectToHistory(calc);
+  updateHistoryBadges();
 }
 
 function renderWeekendActionPlan(calc) {
@@ -1155,6 +1315,429 @@ function handlePrintPDF() {
   }, 150);
 }
 
+// --- 5.5. QUẢN LÝ LỊCH SỬ DỰ ÁN & KHỞI TẠO HỢP NHẤT ---
+function renderProjectHistoryModal() {
+  const listContainer = document.getElementById('history-projects-list');
+  if (!listContainer) return;
+
+  const history = loadProjectHistory();
+  updateHistoryBadges(history.length);
+
+  if (history.length === 0) {
+    listContainer.innerHTML = `
+      <div style="text-align:center; padding:36px 16px; color:#64748b;">
+        <div style="font-size:32px; margin-bottom:8px;">📂</div>
+        <p style="font-weight:700; margin:0 0 4px; color:#334155;">Chưa có dự án nào được lưu gần đây</p>
+        <p style="font-size:12.5px; margin:0;">Mọi dự án Sếp tạo hoặc bóc tách sẽ tự động lưu an toàn tại đây để mở lại bất cứ lúc nào.</p>
+      </div>
+    `;
+    return;
+  }
+
+  listContainer.innerHTML = history.map(item => {
+    const pType = PROJECT_TYPES[item.projectType]?.name || item.projectType || 'Công trình';
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; margin-bottom:10px;">
+        <div style="flex:1; min-width:0; padding-right:12px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <strong style="color:#0f4c81; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${item.title || 'Dự án chưa đặt tên'}
+            </strong>
+            <span style="font-size:11px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:700;">
+              ${pType}
+            </span>
+          </div>
+          <div style="display:flex; gap:10px; font-size:12px; color:#475569; flex-wrap:wrap;">
+            <span>🕒 Lưu: <strong>${item.updatedAt}</strong></span>
+            <span>⏱️ Tiến độ: <strong>${item.targetDays} ngày</strong></span>
+            <span>👷 Hao phí: <strong>${formatNum(item.totalManDays, 1)} công</strong></span>
+            <span>💰 Chi phí: <strong style="color:#b45309;">${formatVND(item.totalLaborCost)}</strong></span>
+            <span>📋 Hạng mục: <strong>${item.itemsCount}</strong></span>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:6px; flex-shrink:0;">
+          <button type="button" class="btn-primary btn-sm btn-open-history-item" data-id="${item.id}" style="padding:6px 12px; font-weight:700;">
+            📂 Mở Lại
+          </button>
+          <button type="button" class="btn-secondary btn-sm btn-del-history-item" data-id="${item.id}" style="color:#ef4444; padding:6px 8px;" title="Xóa dự án này khỏi lịch sử">
+            ✕
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  listContainer.querySelectorAll('.btn-open-history-item').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-id');
+      if (id) openProjectFromHistory(id);
+    });
+  });
+
+  listContainer.querySelectorAll('.btn-del-history-item').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-id');
+      if (id) deleteProjectFromHistory(id);
+    });
+  });
+}
+
+let uStagedFile = null;
+
+function setupUnifiedCreatorModal() {
+  const modal = document.getElementById('modal-unified-project-creator');
+  if (!modal) return;
+
+  const inputName = document.getElementById('u-proj-name');
+  const selectType = document.getElementById('u-proj-type');
+  const inputStartDate = document.getElementById('u-start-date');
+  const inputTargetDays = document.getElementById('u-target-days');
+  const selectWeekendMode = document.getElementById('u-weekend-mode');
+  const selectShift = document.getElementById('u-shift');
+  const quickText = document.getElementById('u-quick-text');
+
+  const fileInput = document.getElementById('u-file-input');
+  const dropZone = document.getElementById('u-dropzone');
+  const fileReadyBar = document.getElementById('u-file-ready-bar');
+  const filenameLabel = document.getElementById('u-selected-filename');
+  const btnRemoveFile = document.getElementById('u-btn-remove-file');
+
+  function updateUnifiedPreview() {
+    const sDate = inputStartDate?.value || getTodayISOString();
+    const tDays = parseInt(inputTargetDays?.value, 10) || 14;
+    const wMode = selectWeekendMode?.value || 'WEEKEND_NOISY_FOCUS';
+    const cal = buildProjectCalendar(sDate, tDays, wMode);
+
+    const prevStart = document.getElementById('u-preview-start');
+    const prevEnd = document.getElementById('u-preview-end');
+    const prevTotal = document.getElementById('u-preview-total-cal');
+
+    if (prevStart) prevStart.textContent = cal.startDateFormatted;
+    if (prevEnd) prevEnd.textContent = cal.endDateFormatted;
+    if (prevTotal) prevTotal.textContent = String(cal.totalCalendarDays);
+  }
+
+  // Khởi tạo ngày hôm nay nếu chưa có
+  if (inputStartDate && !inputStartDate.value) {
+    inputStartDate.value = getTodayISOString();
+  }
+  updateUnifiedPreview();
+
+  [inputStartDate, inputTargetDays, selectWeekendMode, selectShift].forEach(el => {
+    el?.addEventListener('change', updateUnifiedPreview);
+    el?.addEventListener('input', updateUnifiedPreview);
+  });
+
+  selectType?.addEventListener('change', (e) => {
+    const cfg = PROJECT_TYPES[e.target.value];
+    if (cfg) {
+      if (selectWeekendMode) selectWeekendMode.value = cfg.defaultWeekendMode;
+      if (selectShift) selectShift.value = String(cfg.defaultShift);
+      updateUnifiedPreview();
+    }
+  });
+
+  function stageUnifiedFile(file) {
+    if (!file) return;
+    uStagedFile = file;
+    if (filenameLabel) {
+      const sizeKB = (file.size / 1024).toFixed(1);
+      filenameLabel.textContent = `📄 ${file.name} (${sizeKB} KB)`;
+    }
+    if (fileReadyBar) fileReadyBar.style.display = 'block';
+    showToast(`Đã nhận file "${file.name}". Bấm [⚡ Bóc Tách Bảng Tính] hoặc [✨ Gemini AI Phân Tích]!`);
+  }
+
+  function clearUnifiedFile() {
+    uStagedFile = null;
+    if (fileReadyBar) fileReadyBar.style.display = 'none';
+    if (fileInput) fileInput.value = '';
+  }
+
+  fileInput?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) stageUnifiedFile(file);
+  });
+
+  if (dropZone) {
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-active');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-active'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-active');
+      const file = e.dataTransfer?.files?.[0];
+      if (file) stageUnifiedFile(file);
+    });
+  }
+
+  btnRemoveFile?.addEventListener('click', clearUnifiedFile);
+
+  modal.querySelectorAll('.u-btn-template').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const tKey = e.currentTarget.getAttribute('data-template');
+      const tmpl = PROJECT_TEMPLATES[tKey];
+      if (tmpl) {
+        if (inputName) inputName.value = tmpl.title;
+        if (selectType) selectType.value = tmpl.projectType;
+        if (inputTargetDays) inputTargetDays.value = String(tmpl.targetDays);
+        if (selectWeekendMode) selectWeekendMode.value = tmpl.weekendMode;
+        if (quickText) quickText.value = tmpl.items.map(it => `${it.quantity} ${it.unit} ${it.name}`).join('\n');
+        updateUnifiedPreview();
+        showToast(`Đã nạp kịch bản mẫu "${tmpl.title}". Bấm Bóc Tách để xem kết quả!`);
+      }
+    });
+  });
+
+  function applyProjectMeta() {
+    state.projectTitle = inputName?.value?.trim() || 'Dự Án Thi Công Nội Thất';
+    state.projectType = selectType?.value || 'OFFICE_BUILDING';
+    state.startDate = inputStartDate?.value || getTodayISOString();
+    state.targetDays = parseInt(inputTargetDays?.value, 10) || 14;
+    state.weekendMode = selectWeekendMode?.value || 'WEEKEND_NOISY_FOCUS';
+    state.hoursPerDay = parseInt(selectShift?.value, 10) || 8;
+    const cfg = PROJECT_TYPES[state.projectType];
+    state.difficultyFactor = cfg ? cfg.defaultDifficulty : 1.1;
+    state.autoScaleCrewToTargetDays = true;
+  }
+
+  // 1. Nút Bóc Tách Bảng Tính (Nhanh bằng regex & định mức nội bộ)
+  document.getElementById('u-btn-instant-calc')?.addEventListener('click', async () => {
+    applyProjectMeta();
+
+    if (uStagedFile) {
+      setLoadingStatus(true, `Đang bóc tách file "${uStagedFile.name}"...`);
+      try {
+        const { items, rawText } = await parseExcelBOQFile(uStagedFile);
+        if (items.length > 0) {
+          state.items = items;
+          state.hasProject = true;
+          state.executiveNote = `Đã bóc tách tự động ${items.length} hạng mục từ file "${uStagedFile.name}".`;
+          renderAll();
+          modal.close();
+          clearUnifiedFile();
+          showToast(`Bóc tách thành công ${items.length} hạng mục từ "${uStagedFile.name}"!`);
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+        showToast(`Lỗi bóc tách file: ${err.message}`, true);
+      } finally {
+        setLoadingStatus(false);
+      }
+    }
+
+    const text = quickText?.value?.trim();
+    if (text) {
+      const items = parseQuickTextLocal(text);
+      if (items.length > 0) {
+        state.items = items;
+        state.hasProject = true;
+        state.executiveNote = `Đã bóc tách tự động ${items.length} hạng mục theo định mức nội bộ.`;
+        renderAll();
+        modal.close();
+        clearUnifiedFile();
+        showToast(`Bóc tách thành công ${items.length} hạng mục công việc!`);
+        return;
+      }
+    }
+
+    // Default template if nothing entered
+    const tmpl = PROJECT_TEMPLATES.office250;
+    state.items = structuredClone(tmpl.items);
+    state.hasProject = true;
+    renderAll();
+    modal.close();
+    showToast('Đã khởi tạo dự án với khối lượng tiêu chuẩn!');
+  });
+
+  // 2. Nút Gemini AI Phân Tích (Chuyên sâu)
+  document.getElementById('u-btn-ai-calc')?.addEventListener('click', async () => {
+    applyProjectMeta();
+
+    if (uStagedFile) {
+      const ext = uStagedFile.name.split('.').pop().toLowerCase();
+      if (['xlsx', 'xls', 'csv'].includes(ext)) {
+        setLoadingStatus(true, `Đang gửi bảng tính "${uStagedFile.name}" tới Gemini AI phân tích chuyên sâu...`);
+        try {
+          const arrayBuffer = await uStagedFile.arrayBuffer();
+          const workbook = window.XLSX.read(arrayBuffer, { type: 'array' });
+          const allLines = [];
+          for (const sName of workbook.SheetNames) {
+            const sheet = workbook.Sheets[sName];
+            const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            allLines.push(`=== BẢNG / PHÂN ĐOẠN: ${sName} ===`);
+            for (const r of rows) {
+              const str = r.map(c => String(c ?? '').trim()).filter(Boolean).join(' | ');
+              if (str) allLines.push(str);
+            }
+          }
+          const content = allLines.slice(0, 300).join('\n');
+          await triggerGeminiTextAnalysis(
+            `Bóc tách dự toán nội thất từ file Excel "${uStagedFile.name}". Bỏ qua hoàn toàn các mục điều hòa/lạnh và PCCC của thầu phụ. Phân biệt đồ mộc gia công sẵn ở xưởng với lắp đặt công trình, và tách riêng thợ phụ bốc xếp logistics:\n\n${content}`
+          );
+          modal.close();
+          clearUnifiedFile();
+        } catch (err) {
+          console.error(err);
+          showToast(`Lỗi phân tích AI: ${err.message}`, true);
+        } finally {
+          setLoadingStatus(false);
+        }
+        return;
+      } else if (ext === 'pdf') {
+        setLoadingStatus(true, `Đang gửi file PDF "${uStagedFile.name}" tới Gemini AI...`);
+        try {
+          const base64Data = await fileToBase64(uStagedFile);
+          const aiRes = await analyzeWithGeminiAI({
+            textContent: `Đọc bảng BOQ từ file PDF "${uStagedFile.name}" và trích xuất toàn bộ các hạng mục công việc nội thất Fitout, loại trừ điều hòa lạnh và PCCC, phân định thợ mộc lắp đặt và thợ phụ bốc xếp.`,
+            pdfBase64: base64Data
+          });
+          if (aiRes?.items?.length > 0) {
+            state.items = aiRes.items;
+            state.hasProject = true;
+            if (aiRes.projectTitle) state.projectTitle = aiRes.projectTitle;
+            renderAll();
+            modal.close();
+            clearUnifiedFile();
+            showToast(`Gemini AI đã bóc tách ${aiRes.items.length} hạng mục từ PDF!`);
+          } else {
+            showToast('AI không tìm thấy bảng khối lượng trong file PDF.', true);
+          }
+        } catch (err) {
+          console.error(err);
+          showToast(`Lỗi phân tích PDF: ${err.message}`, true);
+        } finally {
+          setLoadingStatus(false);
+        }
+        return;
+      }
+    }
+
+    const text = quickText?.value?.trim();
+    if (text) {
+      await triggerGeminiTextAnalysis(text);
+      modal.close();
+      clearUnifiedFile();
+      return;
+    }
+
+    showToast('Vui lòng tải file BOQ hoặc nhập mô tả khối lượng trước khi bấm Gemini AI phân tích.', true);
+  });
+}
+
+async function handleAIUpdateMarketWages() {
+  const container = document.getElementById('market-wage-preview-container');
+  if (!container) return;
+
+  container.style.display = 'block';
+  container.innerHTML = `
+    <div style="text-align:center; padding:18px; color:#0369a1;">
+      <div style="font-size:24px; animation:spin 1s linear infinite; display:inline-block; margin-bottom:8px;">🌐</div>
+      <p style="font-weight:700; margin:0;">Đang dùng Google Gemini AI tra cứu mặt bằng đơn giá nhân công fitout & nội thất thực tế trên web...</p>
+      <p style="font-size:12px; color:#64748b; margin:4px 0 0;">(Khảo sát đơn giá công thợ tại TP.HCM & Hà Nội năm 2025 - 2026)</p>
+    </div>
+  `;
+
+  try {
+    const marketData = await fetchMarketLaborWagesWithAI();
+    if (!marketData || !marketData.wages) {
+      throw new Error('AI không trả về được bảng giá hợp lệ.');
+    }
+
+    let rowsHtml = '';
+    for (const [tKey, tInfo] of Object.entries(TRADES)) {
+      const currentWage = state.tradeWages[tKey] || tInfo.defaultDailyWage;
+      const marketWage = marketData.wages[tKey]?.dailyWage || currentWage;
+      const diff = marketWage - currentWage;
+      const diffStr = diff > 0 ? `+${formatVND(diff)}` : (diff < 0 ? `-${formatVND(Math.abs(diff))}` : '0 đ');
+      const diffColor = diff > 0 ? '#b45309' : (diff < 0 ? '#166534' : '#475569');
+
+      rowsHtml += `
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:8px 10px; font-weight:700; color:#0f4c81;">${tInfo.name}</td>
+          <td style="padding:8px 10px; text-align:right; font-weight:700; color:#334155;">${formatVND(currentWage)}</td>
+          <td style="padding:8px 10px; text-align:right; font-weight:800; color:#0284c7;">
+            <input type="number" class="mkt-wage-input" data-trade="${tKey}" value="${marketWage}" style="width:110px; text-align:right; padding:4px 6px; border:1px solid #93c5fd; border-radius:4px; font-weight:800;" />
+          </td>
+          <td style="padding:8px 10px; text-align:right; font-weight:700; color:${diffColor};">${diffStr}</td>
+          <td style="padding:8px 10px; font-size:12px; color:#475569;">${marketData.wages[tKey]?.note || ''}</td>
+        </tr>
+      `;
+    }
+
+    container.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-weight:800; color:#0369a1; font-size:13.5px;">
+          🌐 Mặt Bằng Đơn Giá Nhân Công Thị Trường (${marketData.updatedYear || '2025-2026'}) do Gemini AI Tra Cứu:
+        </div>
+        <button type="button" id="btn-close-mkt-preview" style="background:none; border:none; color:#64748b; font-size:12px; cursor:pointer;">✕ Đóng</button>
+      </div>
+
+      <p style="font-size:12px; color:#334155; margin:0 0 10px; font-style:italic; background:#fff; padding:6px 10px; border-radius:6px; border:1px solid #e2e8f0;">
+        ${marketData.marketSummary || ''}
+      </p>
+
+      <table style="width:100%; border-collapse:collapse; font-size:12.5px; background:#fff; border-radius:6px; overflow:hidden; border:1px solid #cbd5e1; margin-bottom:12px;">
+        <thead>
+          <tr style="background:#f1f5f9; color:#475569; text-align:left; font-size:12px;">
+            <th style="padding:8px 10px;">Tổ Đội Chuyên Môn</th>
+            <th style="padding:8px 10px; text-align:right;">Giá Hiện Tại</th>
+            <th style="padding:8px 10px; text-align:right;">Giá Thị Trường (AI)</th>
+            <th style="padding:8px 10px; text-align:right;">Chênh Lệch</th>
+            <th style="padding:8px 10px;">Ghi Chú Đánh Giá</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" id="btn-cancel-mkt-wages" class="btn-secondary btn-sm">Hủy</button>
+        <button type="button" id="btn-apply-mkt-wages" class="btn-primary btn-sm" style="font-weight:800;">
+          ✅ Áp Dụng & Ghi Lưu Đơn Giá Này Vào Hệ Thống
+        </button>
+      </div>
+    `;
+
+    document.getElementById('btn-close-mkt-preview')?.addEventListener('click', () => {
+      container.style.display = 'none';
+    });
+    document.getElementById('btn-cancel-mkt-wages')?.addEventListener('click', () => {
+      container.style.display = 'none';
+    });
+
+    document.getElementById('btn-apply-mkt-wages')?.addEventListener('click', () => {
+      container.querySelectorAll('.mkt-wage-input').forEach(inp => {
+        const tKey = inp.getAttribute('data-trade');
+        const val = parseInt(inp.value, 10);
+        if (tKey && !isNaN(val) && val > 0) {
+          state.tradeWages[tKey] = val;
+        }
+      });
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY_CUSTOM_WAGES, JSON.stringify(state.tradeWages));
+      }
+      container.style.display = 'none';
+      renderNormsLibraryModal();
+      renderAll();
+      showToast('Đã áp dụng và lưu thành công đơn giá nhân công mới từ thị trường!');
+    });
+
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `
+      <div style="padding:12px; color:#ef4444; font-size:13px;">
+        ❌ Lỗi tra cứu giá thị trường: ${err.message}. Sếp vui lòng kiểm tra kết nối mạng hoặc thử lại sau.
+      </div>
+    `;
+  }
+}
+
 // --- 6. EVENT LISTENERS & WORKFLOWS ---
 function setupEventListeners() {
   UserInvalidFallback.init(document);
@@ -1549,6 +2132,37 @@ function setupEventListeners() {
     showToast('Đã lưu cấu hình Google Gemini API Key!');
     document.getElementById('settings-dialog')?.close();
   });
+
+  // 5. LỊCH SỬ DỰ ÁN, AI DÒ GIÁ THỊ TRƯỜNG & LÀM MỚI MÀN HÌNH
+  document.getElementById('btn-open-history')?.addEventListener('click', () => {
+    renderProjectHistoryModal();
+  });
+
+  document.querySelectorAll('[commandfor="modal-project-history"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      renderProjectHistoryModal();
+    });
+  });
+
+  document.getElementById('btn-clear-all-history')?.addEventListener('click', () => {
+    clearAllProjectHistory();
+  });
+
+  document.getElementById('btn-ai-update-market-wages')?.addEventListener('click', () => {
+    handleAIUpdateMarketWages();
+  });
+
+  document.getElementById('btn-clear-project-screen')?.addEventListener('click', () => {
+    if (confirm('Sếp có chắc chắn muốn làm mới màn hình? (Dự án hiện tại vẫn được lưu an toàn trong danh sách "Dự Án Gần Đây")')) {
+      clearCurrentProjectStorage();
+      state.hasProject = false;
+      state.items = [];
+      state.projectTitle = 'Dự án mới';
+      state.executiveNote = '';
+      renderAll();
+      showToast('Đã làm mới màn hình! Sếp có thể bấm [Khởi Tạo & Bóc Tách Dự Án] để thực hiện dự án tiếp theo.');
+    }
+  });
 }
 
 let cachedAIConsultReport = null;
@@ -1722,7 +2336,19 @@ async function handleUploadedBOQFile(file, options = { forceAI: false }) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 1. Phục hồi dự án gần nhất từ localStorage khi F5 / mở lại trình duyệt
+  const restored = loadCurrentProjectFromStorage();
+
+  // 2. Thiết lập Modal Hợp Nhất, Thư viện định mức, Event Listeners và Badge Lịch sử
+  setupUnifiedCreatorModal();
   renderNormsLibraryModal();
   setupEventListeners();
+  updateHistoryBadges();
+
+  // 3. Render toàn bộ dữ liệu giao diện (chỉ hiện 3 bảng khi đã có dữ liệu)
   renderAll();
+
+  if (restored && state.hasProject && state.items?.length > 0) {
+    showToast(`Đã tự động khôi phục dự án "${state.projectTitle}" (${state.items.length} hạng mục) sau khi tải lại trang!`);
+  }
 });
