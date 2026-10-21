@@ -9,9 +9,11 @@ const DEFAULT_KEY_PARTS = [
 ];
 
 export function getActiveApiKey() {
-  const custom = localStorage.getItem('crystal_qs_gemini_key');
-  if (custom && custom.trim().length > 10) {
-    return custom.trim();
+  if (typeof localStorage !== 'undefined') {
+    const custom = localStorage.getItem('crystal_qs_gemini_key');
+    if (custom && custom.trim().length > 10) {
+      return custom.trim();
+    }
   }
   return DEFAULT_KEY_PARTS.join('');
 }
@@ -461,6 +463,66 @@ export function parseQuickTextLocal(inputText) {
   return results;
 }
 
+// BỘ LÀM SẠCH VÀ PHỤC HỒI JSON TỪ AI CHỐNG LỖI CÚ PHÁP
+function cleanAndParseJson(rawText) {
+  if (!rawText || typeof rawText !== 'string') {
+    throw new Error('Dữ liệu AI trả về rỗng.');
+  }
+
+  let text = rawText.trim();
+  // 1. Bóc tách khối markdown ```json ... ```
+  const jsonBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (jsonBlockMatch) {
+    text = jsonBlockMatch[1].trim();
+  }
+
+  // 2. Cắt lấy vùng JSON từ dấu { đầu tiên tới dấu } cuối cùng
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    text = text.slice(firstBrace, lastBrace + 1);
+  }
+
+  // 3. Thử parse nguyên bản
+  try {
+    return JSON.parse(text);
+  } catch (err1) {
+    console.warn('JSON.parse cơ bản chưa qua, tiến hành khử nhiễu cú pháp:', err1.message);
+  }
+
+  // 4. Khử dấu phẩy thừa trước ] hoặc }
+  let sanitized = text.replace(/,\s*([}\]])/g, '$1');
+
+  // 5. Khử ký tự xuống dòng thô không hợp lệ trong chuỗi JSON
+  sanitized = sanitized.replace(/(:\s*"[^"]*?)[\r\n]+([^"]*")/g, '$1 $2');
+
+  try {
+    return JSON.parse(sanitized);
+  } catch (err2) {
+    console.warn('JSON.parse bước 2 chưa qua, tiến hành phục hồi chuỗi cắt cụt:', err2.message);
+  }
+
+  // 6. Phục hồi nếu bị ngắt chuỗi giữa chừng do chạm giới hạn token
+  let repaired = sanitized;
+  const unescapedQuotes = (repaired.match(/(?<!\\)"/g) || []).length;
+  if (unescapedQuotes % 2 !== 0) {
+    repaired += '"';
+  }
+  if (repaired.includes('"items"') && !repaired.includes(']')) {
+    repaired += ']';
+  }
+  if (!repaired.endsWith('}')) {
+    repaired += '}';
+  }
+
+  try {
+    return JSON.parse(repaired);
+  } catch (err3) {
+    console.error('Không thể tự động phục hồi JSON từ Gemini AI:', rawText);
+    throw new Error(`Dữ liệu JSON từ AI bị lỗi định dạng: ${err3.message}`);
+  }
+}
+
 // BÓC TÁCH BOQ BẰNG GEMINI AI TỐI ƯU SIÊU TIẾT KIỆM TOKEN
 export async function analyzeWithGeminiAI({ textContent, pdfBase64 = null }) {
   const apiKey = getActiveApiKey();
@@ -515,10 +577,9 @@ Trả về JSON duy nhất:
     text: (textContent || 'Bóc tách BOQ').slice(0, 20000)
   });
 
+  // Ưu tiên gemini-flash-lite-latest (phản hồi siêu tốc 1.2s, ổn định cao không bị 503), sau đó fallback sang gemini-flash-latest
   const modelsToTry = [
-    'models/gemini-2.5-flash',
-    'models/gemini-2.0-flash',
-    'models/gemini-1.5-flash',
+    'models/gemini-flash-lite-latest',
     'models/gemini-flash-latest'
   ];
   let lastError = null;
@@ -549,8 +610,7 @@ Trả về JSON duy nhất:
       const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
       if (!rawText) continue;
 
-      const cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-      const parsed = JSON.parse(cleaned);
+      const parsed = cleanAndParseJson(rawText);
       if (parsed && Array.isArray(parsed.items)) {
         parsed.items = parsed.items
           .filter(it => !isSubcontractorExcludedItem(it.name))

@@ -782,6 +782,7 @@ export const PROJECT_TEMPLATES = {
 const STORAGE_KEY_CUSTOM_NORMS = 'crystal_qs_labor_norms_v1';
 
 export function getActiveLaborNorms() {
+  if (typeof localStorage === 'undefined') return LABOR_NORMS;
   try {
     const saved = localStorage.getItem(STORAGE_KEY_CUSTOM_NORMS);
     if (saved) {
@@ -797,6 +798,7 @@ export function getActiveLaborNorms() {
 }
 
 export function saveActiveLaborNorms(normsList) {
+  if (typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEY_CUSTOM_NORMS, JSON.stringify(normsList));
   } catch (err) {
@@ -805,6 +807,7 @@ export function saveActiveLaborNorms(normsList) {
 }
 
 export function resetLaborNormsToDefault() {
+  if (typeof localStorage === 'undefined') return LABOR_NORMS;
   try {
     localStorage.removeItem(STORAGE_KEY_CUSTOM_NORMS);
   } catch (err) {

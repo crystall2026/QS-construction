@@ -1621,8 +1621,20 @@ async function triggerGeminiTextAnalysis(text) {
       showToast('AI không tìm thấy hạng mục khối lượng nào rõ ràng.', true);
     }
   } catch (err) {
-    console.error(err);
-    showToast(`Lỗi gọi AI: ${err.message}. Đã dùng bộ phân tích định mức nội bộ.`, true);
+    console.error('Gemini AI API Error:', err);
+    // Tự động fallback sang bóc tách định mức nội bộ để dự án luôn hoạt động trơn tru
+    const localItems = parseQuickTextLocal(text);
+    if (localItems.length > 0) {
+      state.hasProject = true;
+      state.items = localItems;
+      state.projectTitle = 'Bóc tách tự động (Bộ định mức nội bộ)';
+      state.autoScaleCrewToTargetDays = true;
+      renderAll();
+      document.getElementById('modal-input-boq')?.close();
+      showToast(`Gemini AI gặp gián đoạn tạm thời. Hệ thống đã tự động dùng bộ bóc tách nội bộ bóc thành công ${localItems.length} hạng mục!`);
+    } else {
+      showToast(`Lỗi phân tích AI: ${err.message}. Sếp có thể dùng nút Bóc Tách Bảng Tính nhanh.`, true);
+    }
   } finally {
     setLoadingStatus(false);
   }
