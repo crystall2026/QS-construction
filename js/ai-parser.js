@@ -76,11 +76,65 @@ export function detectWeekendPolicyFromText(inputText = '') {
   return null;
 }
 
+// Kiểm tra từ khóa loại trừ thầu phụ chuyên trách (Lạnh HVAC, PCCC, Thang máy...)
+export function isSubcontractorExcludedItem(taskName = '') {
+  const norm = normalizeText(taskName);
+  if (!norm) return false;
+
+  // 1. Hệ thống Điều hòa không khí / Lạnh (HVAC)
+  const isHVAC =
+    norm.includes('dieu hoa') ||
+    norm.includes('may lanh') ||
+    norm.includes('dan lanh') ||
+    norm.includes('dan nong') ||
+    norm.includes('ong gio') ||
+    norm.includes('mieng gio') ||
+    norm.includes('chiller') ||
+    norm.includes('vrv') ||
+    norm.includes('vrf') ||
+    norm.includes('fcu') ||
+    norm.includes('ahu') ||
+    norm.includes('gas lanh') ||
+    norm.includes('bom nuoc ngung') ||
+    norm.includes('ong dong may lanh');
+
+  // 2. Hệ thống Phòng cháy chữa cháy (PCCC)
+  const isPCCC =
+    norm.includes('pccc') ||
+    norm.includes('chua chay') ||
+    norm.includes('bao chay') ||
+    norm.includes('dau phun') ||
+    norm.includes('sprinkler') ||
+    norm.includes('dau bao khoi') ||
+    norm.includes('dau bao nhiet') ||
+    norm.includes('chuong bao chay') ||
+    norm.includes('cuon voi') ||
+    norm.includes('tru chua chay') ||
+    norm.includes('van goc chua chay') ||
+    norm.includes('mang ngan chay') ||
+    norm.includes('son chong chay') ||
+    norm.includes('binh bot mfz') ||
+    norm.includes('binh co2');
+
+  // 3. Thầu phụ chuyên trách khác (Thang máy, máy phát điện...)
+  const isOtherSub =
+    norm.includes('thang may') ||
+    norm.includes('thang cuon') ||
+    norm.includes('may phat dien');
+
+  return isHVAC || isPCCC || isOtherSub;
+}
+
 // Bộ so khớp từ khóa nội bộ chuẩn xác (0 token, 0ms)
 export function matchLaborNorm(taskName, unitHint = '') {
   const rawLower = String(taskName || '').toLowerCase();
   const normTask = normalizeText(taskName);
   const normUnit = normalizeText(unitHint);
+
+  // Nếu là mục thầu phụ lạnh/PCCC, trả về null để bộ lọc loại bỏ
+  if (isSubcontractorExcludedItem(taskName)) {
+    return null;
+  }
 
   let bestNorm = null;
   let bestScore = -1;
@@ -190,15 +244,16 @@ export function matchLaborNorm(taskName, unitHint = '') {
         matchedNormName: 'Lắp đặt đèn thả trang trí'
       };
     }
-    if (normTask.includes('o cam') || normTask.includes('cong tac') || normTask.includes('mat hat')) {
+    if (normTask.includes('o cam') || normTask.includes('cong tac') || normTask.includes('mat hat') || normTask.includes('hat mang')) {
+      const isPackagedOutlet = normTask.includes('day') || normTask.includes('ong') || normTask.includes('bao gom') || normTask.includes('kem') || normTask.includes('cat duc') || normTask.includes('am tuong');
       return {
-        code: 'MEP-05',
+        code: isPackagedOutlet ? 'MEP-11' : 'MEP-05',
         trade: 'MEP',
-        unit: unitHint || 'cái',
-        productivityPerManDay: 18.0,
+        unit: unitHint || (isPackagedOutlet ? 'điểm' : 'cái'),
+        productivityPerManDay: isPackagedOutlet ? 6.0 : 18.0,
         crewSize: 2,
-        weekendTag: 'QUIET_WEEKDAY',
-        matchedNormName: 'Lắp đặt ổ cắm / công tắc'
+        weekendTag: isPackagedOutlet ? 'HIGH_NOISE_WEEKEND' : 'QUIET_WEEKDAY',
+        matchedNormName: isPackagedOutlet ? 'Lắp đặt ổ cắm/ổ mạng (gồm cắt đục & dây ống)' : 'Lắp đặt công tắc / ổ cắm / mặt hạt'
       };
     }
     if (normTask.includes('den') || normTask.includes('downlight') || normTask.includes('spotlight') || normTask.includes('panel')) {
@@ -285,6 +340,7 @@ export function parseQuickTextLocal(inputText) {
     if (cleanName.length < 2) cleanName = seg;
 
     const matched = matchLaborNorm(cleanName, rawUnit);
+    if (!matched) continue; // Bỏ qua nếu thuộc thầu phụ lạnh / PCCC
     const formattedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 
     results.push({
@@ -305,21 +361,28 @@ export function parseQuickTextLocal(inputText) {
 export async function analyzeWithGeminiAI({ textContent, pdfBase64 = null }) {
   const apiKey = getActiveApiKey();
 
-  // Prompt tinh gọn ~180 tokens (thay vì 3000 tokens)
-  const compactSystemPrompt = `Bạn là Chuyên gia QS Fitout Crystal Interior.
-Trades hợp lệ: DEMO, MASON, GYPSUM, MEP, PAINT, FLOOR, FURNITURE.
-WeekendTags:
-- HIGH_NOISE_WEEKEND (khoan đục/tháo dỡ/cắt gạch)
-- LIFT_SMELL_WEEKEND (thang tải/mùi keo sơn)
-- QUIET_WEEKDAY (việc êm làm T2-T6)
+  // Prompt chuyên sâu chuẩn QS Fitout: Loại bỏ thầu phụ Điều hòa/Lạnh & PCCC, bóc tách chính xác thiết bị gộp
+  const compactSystemPrompt = `Bạn là Chuyên gia QS Fitout & Nội thất Crystal Interior.
+NHIỆM VỤ QUAN TRỌNG:
+1. LOẠI BỎ HOÀN TOÀN các hạng mục của THẦU PHỤ:
+   - Hệ thống Điều hòa không khí/Lạnh (HVAC, VRV, FCU, miệng gió, ống gió, ống đồng, máy lạnh...).
+   - Hệ thống PCCC (đầu phun sprinkler, báo khói, báo cháy, cuộn vòi, bình chữa cháy...).
+   - Thang máy, máy phát điện.
+   (Không tính công và không đưa vào danh sách items).
+2. XỬ LÝ HẠNG MỤC GỘP & CHIA NHỎ:
+   - Đèn trần chỉ lắp ráp: 20 bộ/công. Đèn gộp cả dây ống: 5.5 bộ/công. Đèn thả decor: 6 bộ/công.
+   - Ổ cắm/công tắc chỉ đấu mặt hạt: 18 cái/công. Ổ cắm/mạng gộp cả cắt đục & dây ống: 6 điểm/công.
+   - Node mạng LAN: 25 node/công. Tủ Rack mạng: 1.5 tủ/công.
+3. Trades hợp lệ: DEMO, MASON, GYPSUM, MEP, PAINT, FLOOR, FURNITURE.
+WeekendTags: HIGH_NOISE_WEEKEND (việc ồn), LIFT_SMELL_WEEKEND (mùi/thang tải), QUIET_WEEKDAY (việc êm làm T2-T6).
 
-Nhiệm vụ: Trích xuất các công việc thi công thành JSON:
+Trả về JSON duy nhất:
 {
-  "projectTitle": "Tên ngắn",
+  "projectTitle": "Tên dự án ngắn gọn",
   "recommendedTargetDays": 12,
   "weekendMode": "WEEKEND_NOISY_FOCUS",
   "items": [
-    {"name": "Tên việc", "trade": "GYPSUM", "unit": "m2", "quantity": 100, "productivityPerManDay": 9, "crewSize": 3, "weekendTag": "HIGH_NOISE_WEEKEND"}
+    {"name": "Tên việc", "trade": "MEP", "unit": "bộ", "quantity": 45, "productivityPerManDay": 5.5, "crewSize": 2, "weekendTag": "QUIET_WEEKDAY"}
   ]
 }`;
 
@@ -365,19 +428,27 @@ Nhiệm vụ: Trích xuất các công việc thi công thành JSON:
       const cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
       const parsed = JSON.parse(cleaned);
       if (parsed && Array.isArray(parsed.items)) {
-        parsed.items = parsed.items.map(it => {
-          const fallbackMatch = matchLaborNorm(it.name, it.unit);
-          return {
-            code: it.code || fallbackMatch.code,
-            name: String(it.name || 'Hạng mục thi công').trim(),
-            trade: TRADES[it.trade] ? it.trade : fallbackMatch.trade,
-            unit: String(it.unit || fallbackMatch.unit || 'm2').trim(),
-            quantity: Math.max(0.1, parseFloat(it.quantity) || 1),
-            productivityPerManDay: Math.max(0.1, parseFloat(it.productivityPerManDay) || fallbackMatch.productivityPerManDay),
-            crewSize: Math.max(1, Math.round(parseFloat(it.crewSize) || 2)),
-            weekendTag: WEEKEND_TAGS[it.weekendTag] ? it.weekendTag : fallbackMatch.weekendTag
-          };
-        });
+        parsed.items = parsed.items
+          .filter(it => !isSubcontractorExcludedItem(it.name))
+          .map(it => {
+            const fallbackMatch = matchLaborNorm(it.name, it.unit);
+            const normCode = it.code || (fallbackMatch ? fallbackMatch.code : 'MEP-01');
+            const normTrade = TRADES[it.trade] ? it.trade : (fallbackMatch ? fallbackMatch.trade : 'MEP');
+            const normProd = Math.max(0.1, parseFloat(it.productivityPerManDay) || (fallbackMatch ? fallbackMatch.productivityPerManDay : 10));
+            const normCrew = Math.max(1, Math.round(parseFloat(it.crewSize) || (fallbackMatch ? fallbackMatch.crewSize : 2)));
+            const normWeekend = WEEKEND_TAGS[it.weekendTag] ? it.weekendTag : (fallbackMatch ? fallbackMatch.weekendTag : 'QUIET_WEEKDAY');
+
+            return {
+              code: normCode,
+              name: String(it.name || 'Hạng mục thi công').trim(),
+              trade: normTrade,
+              unit: String(it.unit || (fallbackMatch ? fallbackMatch.unit : 'bộ')).trim(),
+              quantity: Math.max(0.1, parseFloat(it.quantity) || 1),
+              productivityPerManDay: normProd,
+              crewSize: normCrew,
+              weekendTag: normWeekend
+            };
+          });
         return parsed;
       }
     } catch (err) {
@@ -523,7 +594,11 @@ export async function parseExcelBOQFile(file) {
         normName.includes('chi phi chung');
 
       if (name && name.length >= 4 && !isSummaryRow && !isNaN(qty) && qty > 0) {
+        if (isSubcontractorExcludedItem(name)) {
+          continue; // Bỏ qua hạng mục thầu phụ Điều hòa/Lạnh & PCCC theo chỉ đạo của Sếp
+        }
         const matched = matchLaborNorm(name, unit);
+        if (!matched) continue;
         extractedRows.push({
           code: matched.code,
           name,

@@ -448,12 +448,23 @@ export const LABOR_NORMS = [
     code: 'MEP-05',
     name: 'Lắp đặt công tắc, ổ cắm, mặt hạt mạng, aptomat',
     trade: 'MEP',
-    unit: 'bộ',
+    unit: 'cái',
     productivityPerManDay: 18.0,
     defaultCrewSize: 2,
     weekendTag: 'QUIET_WEEKDAY',
-    keywords: ['ổ cắm', 'công tắc', 'đế âm', 'aptomat', 'thiết bị điện'],
+    keywords: ['ổ cắm', 'công tắc', 'đế âm', 'aptomat', 'thiết bị điện', 'mặt hạt'],
     note: 'Đấu nối thiết bị êm, làm T2-T6'
+  },
+  {
+    code: 'MEP-11',
+    name: 'Cung cấp & lắp đặt ổ cắm / ổ mạng trọn gói (bao gồm cắt đục/ống luồn & kéo dây)',
+    trade: 'MEP',
+    unit: 'điểm',
+    productivityPerManDay: 6.0,
+    defaultCrewSize: 2,
+    weekendTag: 'HIGH_NOISE_WEEKEND',
+    keywords: ['o cam bao gom day', 'kem day ong o cam', 'diem o cam tron goi', 'diem mang kem day', 'note mang kem day', 'bao gom day nguon', 'o mang bao gom day'],
+    note: 'Cắt đục rãnh âm tường/bắn ty ống T7-CN; kéo dây và gắn mặt hạt T2-T6 (6 điểm/công)'
   },
   {
     code: 'MEP-06',
